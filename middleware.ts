@@ -1,10 +1,16 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from "next/server";
 
-const isProtectedRoute = createRouteMatcher(["/cms(.*)", "/test"]);
+export function middleware(request: NextRequest) {
+  const isProtectedRoute = request.nextUrl.pathname.startsWith("/cms");
 
-export default clerkMiddleware((auth, req) => {
-  if (isProtectedRoute(req)) auth().protect();
-});
+  if (isProtectedRoute) {
+    // TODO: Replace with Convex Auth session check in Phase 3
+    // For now, allow all requests (auth will be added in Phase 3)
+    return NextResponse.next();
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],

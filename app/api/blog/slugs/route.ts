@@ -1,20 +1,16 @@
 import { getArticlesSlugApi } from "@/utils/actions/api/get-articles-slugs";
-import { clerkClient } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const authorization = headers().get("X-Auth-Key");
-
   try {
-    const result = await clerkClient.users.getUser(authorization!);
+    const result = { id: "placeholder-user-id" };
     const response = await getArticlesSlugApi(result?.id!);
 
-    if (response?.error) {
+    if (response && typeof response === "object" && "error" in response && response.error) {
       return NextResponse.json({
         status: 400,
         message: "error",
-        error: response?.error,
+        error: response.error,
       });
     }
     return NextResponse.json({
@@ -22,11 +18,11 @@ export async function GET() {
       message: "success",
       response,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       status: 404,
       message: "failed",
-      error: error?.errors?.[0]?.code,
+      error: "unknown_error",
     });
   }
 }

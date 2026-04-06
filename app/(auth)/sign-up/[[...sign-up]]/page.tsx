@@ -1,10 +1,7 @@
-"use client"
-import { SignUp } from "@clerk/nextjs";
-
 export default function SignUpPage() {
-    return (
-        <div className="flex min-w-screen justify-center my-[5rem]">
-            <SignUp />
-        </div>
-    );
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <p className="text-muted-foreground">Sign up coming soon</p>
+    </div>
+  );
 }

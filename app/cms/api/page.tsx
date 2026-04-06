@@ -1,8 +1,8 @@
 
 export default function ApiPage() {
   return (
-    <main className="flex w-full mt-[1rem] flex-col items-center justify-between ">
-      <div className="flex flex-col gap-3 mb-[3rem] w-full">
+    <main className="flex w-full mt-4 flex-col items-center justify-between ">
+      <div className="flex flex-col gap-3 mb-12 w-full">
         <h1 className="text-3xl font-semibold mb-6">API Routes</h1>
         <div className="flex flex-col w-full gap-8">
           <div className="flex flex-col justify-center items-start w-full gap-3">
@@ -12,7 +12,7 @@ export default function ApiPage() {
             <pre className="bg-gray-950 p-4 rounded-md max-w-[600px]">
               <code className="text-gray-50 font-mono">
                 {`const response = await fetch(
-  \`\https://cms.rasmic.xyz/api/blog/all\`,
+  \`/api/blog/all\`,
   {
     headers: {
       "X-Auth-Key": API_KEY,
@@ -29,7 +29,7 @@ export default function ApiPage() {
             <pre className="bg-gray-950 p-4 rounded-md max-w-[600px]">
               <code className="text-gray-50 font-mono">
                 {`const response = await fetch(
-  \`\https://cms.rasmic.xyz/api/blog/slugs\`,
+  \`/api/blog/slugs\`,
   {
     headers: {
       "X-Auth-Key": API_KEY,
@@ -46,7 +46,7 @@ export default function ApiPage() {
             <pre className="bg-gray-950 p-4 rounded-md max-w-[600px]">
               <code className="text-gray-50 font-mono">
                 {`const response = await fetch(
-  \`\https://cms.rasmic.xyz/api/blog/[slug]\`,
+  \`/api/blog/[slug]\`,
   {
     method: "POST",
     headers: {

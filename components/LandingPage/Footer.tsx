@@ -17,7 +17,7 @@ const navigation = {
 
 const Footer = () => {
     return (
-        <main className="flex min-w-screen flex-col items-center justify-between border-t pt-[4rem] px-7 pb-7">
+        <main className="flex min-w-screen flex-col items-center justify-between border-t pt-16 px-7 pb-7">
             <footer
                 aria-labelledby="footer-heading"
                 className="font-inter w-full max-w-7xl"

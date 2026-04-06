@@ -4,7 +4,7 @@ import Documents from './(components)/Documents'
 
 export default async function DocumentsPage() {
 
-  const response = await getAllDocuments()
+  const response = (await getAllDocuments()) as Record<string, unknown>[];
 
 
   return (

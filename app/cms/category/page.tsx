@@ -10,8 +10,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { createCategory } from "@/utils/actions/category/create-category";
-import "@blocknote/core/fonts/inter.css";
-import "@blocknote/react/style.css";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -40,15 +38,14 @@ export default function Category() {
       form.reset()
       return response
     } catch (error) {
-      console.log('error', error)
       return error
     }
   }
 
 
   return (
-    <main className="flex w-full mt-[1rem] flex-col items-center justify-between ">
-      <div className="flex flex-col gap-3 mb-[5rem] w-full px-8">
+    <main className="flex w-full mt-4 flex-col items-center justify-between ">
+      <div className="flex flex-col gap-3 mb-20 w-full px-8">
         <h1 className="scroll-m-20 text-4xl font-semibold tracking-tight lg:text-5xl">
           Create a Category
         </h1>

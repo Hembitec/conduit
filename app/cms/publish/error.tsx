@@ -18,7 +18,7 @@ export default function Error({
 
   return (
     <PageWrapper>
-      <div className='flex flex-col gap-3 justify-center items-center mt-[4rem]'>
+      <div className='flex flex-col gap-3 justify-center items-center mt-16'>
         <h2 className="mt-10 scroll-m-20 pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
           Something went wrong!
         </h2>

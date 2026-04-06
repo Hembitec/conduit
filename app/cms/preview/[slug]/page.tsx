@@ -8,13 +8,14 @@ import ReactHtmlParser from 'react-html-parser'
 import ManageArticle from '../(components)/ManageArticle'
 import { transformNode } from '@/utils/transform-node'
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-
-  const response = await getAllArticleBySlug(params?.slug)
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const response: any[] = (await getAllArticleBySlug(slug)) as any[];
 
   return (
     <main className="flex min-w-screen flex-col items-center justify-between ">
-      <ManageArticle response={response} params={params} />
+      <ManageArticle response={response} params={{ slug }} />
       <article className="container relative max-w-3xl pt-3 pb-6 lg:pb-10">
         <div>
           <p

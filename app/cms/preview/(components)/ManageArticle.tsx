@@ -36,13 +36,12 @@ export default function ManageArticle({ params, response }: {
   response: Article[]
 }) {
 
-  console.log('params', params)
-  console.log('response', response)
   const [open, setOpen] = useState<boolean>(false);
   const [openDelete, setOpenDelete] = useState<boolean>(false);
   const router = useRouter()
 
-  const { data, isPending, refetch } = useGetArticleBySlug(params?.slug);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, isPending, refetch } = useGetArticleBySlug(params?.slug) as { data: any[] | undefined; isPending: boolean; refetch: () => void };
 
   const {
     register,
@@ -59,7 +58,6 @@ export default function ManageArticle({ params, response }: {
       refetch()
       return response
     } catch (error) {
-      console.log('error', error)
       return error
     }
   };

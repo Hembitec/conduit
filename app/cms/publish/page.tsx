@@ -16,9 +16,6 @@ import { storeArticles } from "@/utils/actions/articles/store-articles";
 import { useGetAllAuthors } from "@/utils/hooks/useGetAllAuthors";
 import { useGetAllCategories } from "@/utils/hooks/useGetAllCategories";
 import { useGetAllDocuments } from "@/utils/hooks/useGetAllDocuments";
-import { UploadButton } from "@/utils/uploadthing";
-import "@blocknote/core/fonts/inter.css";
-import "@blocknote/react/style.css";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -55,27 +52,28 @@ export default function Publish() {
   const [imageUploadUrl, setImageUploadUrl] = useState<string>("")
 
 
-  const { data: documentData } = useGetAllDocuments()
-  const { data: authorsData } = useGetAllAuthors()
-  const { data: categoryData } = useGetAllCategories()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: documentData } = useGetAllDocuments() as { data: any[] | undefined };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: authorsData } = useGetAllAuthors() as { data: any[] | undefined };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: categoryData } = useGetAllCategories() as { data: any[] | undefined };
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
       const response = await storeArticles(data?.title, data?.subtitle, data?.slug, data?.article, data?.author, data?.category, data?.keywords, imageUploadUrl, data?.image_alt)
-      console.log('r', response)
       toast("Article is published")
       form.reset()
       return response
     } catch (error) {
-      console.log('error', error)
       return error
     }
   }
 
 
   return (
-    <main className="flex min-w-screen mt-[1rem] flex-col items-center justify-between ">
-      <div className="flex flex-col gap-3 mb-[5rem] w-full px-8">
+    <main className="flex min-w-screen mt-4 flex-col items-center justify-between ">
+      <div className="flex flex-col gap-3 mb-20 w-full px-8">
         <h1 className="scroll-m-20 text-4xl font-semibold tracking-tight lg:text-5xl">
           Publish
         </h1>
@@ -144,28 +142,19 @@ export default function Publish() {
             </div>
             <div className="flex flex-col justify-center items-start w-full gap-3">
               <Label>Upload Article Image</Label>
-              <UploadButton
-                appearance={{
-                  button:
-                    "ut-ready:bg-green-500 ut-uploading:cursor-not-allowed rounded-r-none bg-red-500 bg-none after:bg-orange-400 px-5",
-                  container: "w-max flex-row rounded-md border-cyan-300 bg-slate-800",
-                  allowedContent:
-                    "flex h-8 flex-col items-center justify-center px-2 text-white",
-                }}
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                  // Do something with the response
-                  setImageUploadUrl(res?.[0]?.url)
-                  toast(`Image uploaded`)
-                }}
-                onUploadError={(error: Error) => {
-                  // Do something with the error.
-                  toast(`ERROR! ${error.message}`);
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    toast("Image upload will be available soon (R2 integration pending)");
+                  }
                 }}
               />
              {imageUploadUrl !== "" && <div className="flex flex-col justify-center items-start w-full gap-3 mt-2">
                 <Label>Image Url</Label>
-                <Input value={imageUploadUrl} />
+                <Input value={imageUploadUrl} onChange={(e) => setImageUploadUrl(e.target.value)} />
               </div>}
             </div>
             <FormField

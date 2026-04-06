@@ -1,0 +1,47 @@
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { NextRequest, NextResponse } from "next/server";
+import { r2Client, R2_BUCKET_NAME } from "@/lib/r2";
+
+export async function POST(request: NextRequest) {
+    try {
+        const body = await request.json();
+        const { filename, contentType } = body as {
+            filename: string;
+            contentType: string;
+        };
+
+        if (!filename || !contentType) {
+            return NextResponse.json(
+                { error: "filename and contentType are required" },
+                { status: 400 }
+            );
+        }
+
+        // Sanitise filename
+        const safeFilename = filename
+            .replace(/[^a-zA-Z0-9._-]/g, "-")
+            .toLowerCase();
+        const key = `uploads/${Date.now()}-${safeFilename}`;
+
+        const command = new PutObjectCommand({
+            Bucket: R2_BUCKET_NAME,
+            Key: key,
+            ContentType: contentType,
+        });
+
+        const presignedUrl = await getSignedUrl(r2Client, command, {
+            expiresIn: 300, // 5 minutes
+        });
+
+        const publicUrl = `${process.env.NEXT_PUBLIC_R2_DEV_URL}/${key}`;
+
+        return NextResponse.json({ presignedUrl, publicUrl, key });
+    } catch (error) {
+        console.error("Upload route error:", error);
+        return NextResponse.json(
+            { error: "Failed to generate upload URL" },
+            { status: 500 }
+        );
+    }
+}

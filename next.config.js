@@ -10,12 +10,6 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'utfs.io',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
         hostname: 'github.com',
         port: '',
         pathname: '/**',
@@ -23,6 +17,13 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'ansubkhan.com',
+        port: '',
+        pathname: '/**',
+      },
+      // Cloudflare R2 public bucket domain
+      {
+        protocol: 'https',
+        hostname: process.env.NEXT_PUBLIC_R2_HOSTNAME || 'pub-*.r2.dev',
         port: '',
         pathname: '/**',
       },

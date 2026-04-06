@@ -1,7 +1,6 @@
 import {
     Avatar,
     AvatarFallback,
-    AvatarImage,
 } from "@/components/ui/avatar"
 import {
     DropdownMenu,
@@ -10,12 +9,9 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuShortcut,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import { SignOutButton, useUser } from "@clerk/nextjs"
 import {
-    CreditCard,
     LogOut,
     Settings,
     User
@@ -23,42 +19,30 @@ import {
 import Link from "next/link"
 
 export function Profile() {
-    const { isSignedIn, user, isLoaded } = useUser();
-
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild className="w-[2.25rem] h-[2.25rem]">
-                <Avatar >
-                    <AvatarImage src={user?.imageUrl} alt="User Profile" />
-                    <AvatarFallback></AvatarFallback>
+            <DropdownMenuTrigger asChild className="w-9 h-9">
+                <Avatar>
+                    <AvatarFallback>U</AvatarFallback>
                 </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    <Link href="/user-profile">
-                        <DropdownMenuItem>
-                            <User className="mr-2 h-4 w-4" />
-                            <span>Profile</span>
-                            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-                        </DropdownMenuItem>
-                    </Link>
                     <Link href="/cms/settings">
                         <DropdownMenuItem>
                             <Settings className="mr-2 h-4 w-4" />
                             <span>Settings</span>
-                            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
                         </DropdownMenuItem>
                     </Link>
                 </DropdownMenuGroup>
-                <SignOutButton>
+                <Link href="/sign-in">
                     <DropdownMenuItem>
                         <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                        <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
+                        <span>Sign In</span>
                     </DropdownMenuItem>
-                </SignOutButton>
+                </Link>
             </DropdownMenuContent>
         </DropdownMenu>
     )

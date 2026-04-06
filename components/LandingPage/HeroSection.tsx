@@ -9,7 +9,7 @@ import { BorderBeam } from '../magicui/border-beam';
 
 export default function HeroSection() {
     return (
-        <div className='flex flex-col items-center justify-center mt-[1rem] p-3'>
+        <div className='flex flex-col items-center justify-center mt-4 p-3'>
             <div className="my-5">
                 <AnimatedGradientTextComponent />
             </div>
@@ -33,9 +33,9 @@ export default function HeroSection() {
                         initial={{ y: -100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ type: 'spring', stiffness: 100, damping: 3 }}
-                        className="relative flex max-w-6xl justify-center overflow-hidden"
+                        style={{ position: 'relative' }}
                     >
-                        <div className="relative flex max-w-6xl justify-center overflow-hidden mt-7">
+                        <div className="relative flex max-w-6xl justify-center overflow-hidden">
                             <div className="relative rounded-xl">
                                 <img
                                     src="/home.png"
@@ -46,7 +46,7 @@ export default function HeroSection() {
                             </div>
                         </div>
                     </motion.div>
-                    {/* <div className="from-1% absolute inset-0 bg-gradient-to-t from-white to-35%" /> */}
+                    {/* <div className="from-1% absolute inset-0 bg-linear-to-t from-white to-35%" /> */}
                 </div>
             </div>
 

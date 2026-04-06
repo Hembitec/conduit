@@ -8,7 +8,7 @@ import { BubbleMenu, EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { ImageIcon } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
-import "./styles.scss";
+
 import ManageArticle from '../../(components)/ManageArticle';
 import { SubmitDocument } from '@/app/cms/documents/[id]/(components)/SubmitDocument';
 import { UpdateArticle } from '../../(components)/UpdateArticle';
@@ -169,8 +169,8 @@ const MenuBar = ({ editor }: any) => {
 
 export default function ArticleEditor({ params }: { params: { slug: string } }) {
 
-  // console.log('params', params)
-  const { data } = useGetArticleBySlug(params?.slug)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = useGetArticleBySlug(params?.slug) as { data: any[] | undefined };
 
   const extensions: any = [
     StarterKit.configure({

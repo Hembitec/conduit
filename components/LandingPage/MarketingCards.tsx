@@ -65,7 +65,7 @@ const ProjectsData = [
 const SpringAnimatedFeatures = () => {
   return (
     <div className="flex flex-col justify-center items-center">
-      <div className='flex flex-col mb-[3rem]'>
+      <div className='flex flex-col mb-12'>
         <h1 className="scroll-m-20 text-3xl sm:text-xl md:text-3xl font-semibold tracking-tight lg:text-4xl text-center max-w-[700px]">
           Insert cool headline here
         </h1>
@@ -85,8 +85,9 @@ const SpringAnimatedFeatures = () => {
                 bounce: 0.7,
               }}
               key={project.id}
-              className="mt-5 text-left border p-6 rounded-md"
+              style={{ marginTop: '1.25rem' }}
             >
+              <div className="text-left border p-6 rounded-md">
               <a target="_blank" rel="noopener noreferrer" href={project.link}>
                 <Image
                   src={project.image}
@@ -102,6 +103,7 @@ const SpringAnimatedFeatures = () => {
                   {project.description}
                 </div>
               </a>
+              </div>
             </motion.div>
           )
         })}

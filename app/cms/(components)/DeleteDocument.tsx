@@ -31,12 +31,10 @@ export default function DeleteDocument({ id }: { id: string }) {
         <Button type="submit" onClick={async () => {
           try {
             const response = await deleteDocument(id)
-            console.log('response', response)
             setOpen(false)
             router.push("/cms/documents")
             return response
           } catch (error) {
-            console.log('error', error)
             return error
           }
         }}>Delete</Button>

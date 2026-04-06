@@ -7,13 +7,13 @@ import Image from "next/image"
 import Link from "next/link"
 
 export default async function CMS() {
-  const response = await getAllArticles()
+  const response = (await getAllArticles()) as Record<string, unknown>[];
   return (
-    <main className="flex w-full mt-[1rem] flex-col items-start justify-between ">
+    <main className="flex w-full mt-4 flex-col items-start justify-between ">
       <h1 className="scroll-m-20 font-semibold tracking-tight text-4xl">
         Articles
       </h1>
-      <div className="flex flex-wrap justify-start items-center gap-3 mt-[1rem] mb-[5rem] w-full">
+      <div className="flex flex-wrap justify-start items-center gap-3 mt-4 mb-20 w-full">
         {response?.length > 0 ? response?.map((info: any) => (
           <Link href={`/cms/preview/${info?.slug}`} key={info?.id}>
             <article

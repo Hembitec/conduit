@@ -8,7 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { ImageIcon } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 import { SubmitDocument } from './(components)/SubmitDocument';
-import "./styles.scss";
+
 import DeleteDocument from '../../(components)/DeleteDocument';
 
 const MenuBar = ({ editor }: any) => {
@@ -167,7 +167,8 @@ const MenuBar = ({ editor }: any) => {
 
 export default function DocumentEditor({ params }: { params: { id: string } }) {
 
-  const { data } = useGetDocumentById(params?.id)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = useGetDocumentById(params?.id) as { data: any[] | undefined };
 
   const extensions: any = [
     StarterKit.configure({

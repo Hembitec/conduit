@@ -8,10 +8,10 @@ import { redirect } from 'next/navigation';
 import ReactHtmlParser from 'react-html-parser';
 
 
-export default async function Article({ params }: { params: { id: string } }) {
-
-  const data = await readPublicArticle((params?.id));
-  console.log('r', data)
+export default async function Article({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data: any[] = (await readPublicArticle(id)) as any[];
 
   if (data?.[0]?.shareable !== true) {
     redirect("/")
@@ -56,9 +56,9 @@ export default async function Article({ params }: { params: { id: string } }) {
         {ReactHtmlParser(data?.[0]?.blog_html, {
           transform: transformNode
         })}
-        <Link href='https://cms.rasmic.xyz' target='_blank'>
+        <Link href='/' target='_blank'>
           <div className="w-[225px] fixed bg-white  bottom-5 right-5 text-sm p-3 rounded border">
-            <p className='text-center '>Written on <span className='font-semibold'>SupaNext CMS</span></p>
+            <p className='text-center '>Written on <span className='font-semibold'>TBD CMS</span></p>
           </div>
         </Link>
       </article>
