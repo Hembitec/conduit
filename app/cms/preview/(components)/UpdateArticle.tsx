@@ -6,12 +6,14 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
-import { updateArticle } from "@/utils/actions/articles/update-article";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 export function UpdateArticle({ html, slug }: { html: string, slug: string }) {
   const [open, setOpen] = useState<boolean>(false);
+  const actUpdateArticle = useMutation(api.mutations.updateArticle);
 
 
   return (
@@ -25,11 +27,12 @@ export function UpdateArticle({ html, slug }: { html: string, slug: string }) {
         </DialogHeader>
         <Button type="submit" onClick={async () => {
           try {
-            const response = await updateArticle(slug, html)
-            toast("Article has been updated")
-            setOpen(false)
-            return response
-          } catch (error) {
+            const response = await actUpdateArticle({ slug, blogHtml: html });
+            toast("Article has been updated");
+            setOpen(false);
+            return response;
+          } catch (error: any) {
+            toast.error(error.message || "Failed to update article");
             return error
           }
         }}>Save changes</Button>

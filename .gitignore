@@ -93,3 +93,11 @@ temp/
 
 # OpenCode
 .opencode/
+
+# AI and Code Assistants
+.agents/
+.claude/
+.kilocode/
+.kiro/
+.windsurf/
+CLAUDE.md

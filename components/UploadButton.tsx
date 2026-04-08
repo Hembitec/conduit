@@ -68,7 +68,6 @@ export function UploadButton({
                 type="file"
                 accept={accept}
                 className="hidden"
-                id="upload-input"
                 onChange={handleFileChange}
             />
             <Button

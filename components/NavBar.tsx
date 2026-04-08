@@ -21,9 +21,9 @@ export function NavBar() {
                 </SheetTrigger>
                 <SheetContent side="left">
                     <SheetHeader>
-                        <SheetTitle>SupaNext CMS</SheetTitle>
+                        <SheetTitle>Conduit CMS</SheetTitle>
                         <SheetDescription>
-                            An opensource blog CMS built using Nextjs, Supabase & TipTap
+                            A modern blog CMS built using Nextjs, Convex & TipTap
                         </SheetDescription>
                     </SheetHeader>
                     <div className="flex flex-col space-y-3 mt-4">

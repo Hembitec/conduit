@@ -9,9 +9,11 @@ import {
   FormMessage
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { createCategory } from "@/utils/actions/category/create-category";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { ConvexError } from "convex/values";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -30,15 +32,20 @@ export default function Category() {
 
 
 
+  const actCreateCategory = useMutation(api.mutations.createCategory);
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
-      const response = await createCategory(data?.category)
-      toast("Category has been created")
-      form.reset()
-      return response
-    } catch (error) {
-      return error
+      const response = await actCreateCategory({ name: data?.category });
+      toast("Category has been created");
+      form.reset();
+      return response;
+    } catch (error: unknown) {
+      const message = error instanceof ConvexError
+        ? (error.data as string)
+        : "Failed to create category";
+      toast.error(message);
+      return error;
     }
   }
 

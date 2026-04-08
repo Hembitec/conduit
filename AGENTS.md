@@ -421,3 +421,33 @@ AI agents lose context between sessions. This file is the persistent memory. If 
 ---
 
 **Remember**: If you're unsure, ask. If you make a mistake, fix it immediately. If a phase is done, verify every acceptance criterion before moving on. Always update this file after significant work.
+
+<!-- convex-ai-start -->
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read `convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
+<!-- convex-ai-end -->
+
+## 17. Session Notes
+
+### 2026-04-07 — Phase 4 Completion & Stabilization (Phase 4.1/4.2)
+- **What was done**: Completed Phase 4 (Data Layer Migration) by verifying all Convex CRUD operations work. Conducted a deep code audit across 6 core workflows and fixed critical UI/UX, data integrity, and security gaps (Phase 4.1 and 4.2). Marked Phase 4 as `DONE` in the tracker.
+- **Key decisions**:
+  - Replaced raw `throw new Error()` in `convex/mutations.ts` with `ConvexError` to surface clean error messages to the client instead of raw stack traces.
+  - Form validation on the "Publish" and "Manage Article" pages was updated to store document `_id` values instead of full `blogHtml` blobs to prevent Next.js client-side state corruption.
+  - Used `useRouter` to auto-redirect users from document creation to the TipTap editor, and from publish submission back to the CMS dashboard (better UX).
+  - API Routes are now fully secured with `X-Auth-Key` header validation checking against a new `by_api_key` index in Convex.
+- **Issues encountered & fixed**:
+  - *Next.js Image Crash*: Solved empty `src` attribute crashes on the CMS dashboard by conditionally rendering skeleton placeholders if no image exists.
+  - *Data Corruption*: Forms were storing full HTML as string values, replaced with Convex ID bindings.
+  - *Broken API Key UI*: The Settings page was hardcoded. Re-wired it to load real API keys and trigger the `generateApiKey` mutation.
+  - *Unpublished Share Links 404ing*: Fixed `readPublicArticle` to allow shareable (but unpublished) articles to be viewed via direct link.
+  - *Missing Clicks*: Added CTA buttons (Share, Manage, Open Editor, etc.) to all dashboard cards for discoverability.
+- **Files changed**:
+  - `convex/mutations.ts`, `convex/queries.ts`, `convex/schema.ts`
+  - `app/api/blog/.../*route.ts`
+  - `app/cms/page.tsx`, `app/cms/settings/(components)/UserInfo.tsx`, `app/cms/documents/[id]/(components)/SubmitDocument.tsx`, `app/cms/(components)/CreateDocument.tsx`, `app/cms/publish/page.tsx`, `app/cms/documents/(components)/Documents.tsx`, `app/article/public/[id]/page.tsx`
+  - `components/TrackPageView.tsx`
+- **Next step**: Move on to Phase 5 (UI/UX Redesign).

@@ -1,7 +1,8 @@
 "use client"
 import { Button } from '@/components/ui/button';
-import { useGetArticleBySlug } from '@/utils/hooks/useGetArticleBySlug';
-import { useGetDocumentById } from '@/utils/hooks/useGetDocumentById';
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import { BubbleMenu, EditorContent, useEditor } from '@tiptap/react';
@@ -169,8 +170,7 @@ const MenuBar = ({ editor }: any) => {
 
 export default function ArticleEditor({ params }: { params: { slug: string } }) {
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = useGetArticleBySlug(params?.slug) as { data: any[] | undefined };
+  const data = useQuery(api.queries.getArticleBySlug, { slug: params?.slug });
 
   const extensions: any = [
     StarterKit.configure({
@@ -207,10 +207,10 @@ export default function ArticleEditor({ params }: { params: { slug: string } }) 
   }) as any
 
   useEffect(() => {
-    if (editor && data?.[0]?.blog_html) {
-      editor.commands.setContent(data?.[0]?.blog_html)
+    if (editor && data?.blogHtml) {
+      editor.commands.setContent(data?.blogHtml)
     }
-  }, [editor, data?.[0]?.blog_html]);
+  }, [editor, data?.blogHtml]);
 
 
   const html = editor?.getHTML()
@@ -247,7 +247,7 @@ export default function ArticleEditor({ params }: { params: { slug: string } }) 
       <div className="p-4 border rounded mt-5">
         <div className='flex pb-3 my-7'>
           <h1 className="scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-5xl">
-            {data?.[0]?.title}
+            {data?.title}
           </h1>
         </div>
         <MenuBar editor={editor} />

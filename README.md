@@ -1,69 +1,37 @@
-<h1 align="center">SupaNext: Opensource Blog CMS</h1>
+# Conduit CMS
 
-SupaNext CMS is a blog CMS built using Nextjs, Supabase, Tiptap, and Uploadthing. The purpose behind it is to have one CMS for all websites I build that might need a blog. I dreaded reading the docs of various CMS's so I decided to build my own.
+A modern, self-hosted blog CMS built with Next.js 16, Convex, and TipTap.
 
-## Technologies Used
+## Tech Stack
 
-- **Next.js**: A React framework for building server-side rendered and static web applications.
-- **Tailwind CSS**: A utility-first CSS framework for rapidly building custom user interfaces.
-- **Supabase**: An open-source Firebase alternative, Supabase provides a suite of tools including a PostgreSQL database, authentication, and real-time features for building modern applications.
-- **TipTap**: A rich text editor framework for Vue.js applications.
-- **Uploadthing**: A simplied typesafe s3 wrapper.
+- **Framework:** Next.js 16 (App Router)
+- **Backend:** Convex
+- **Auth:** Convex Auth
+- **Editor:** TipTap
+- **UI:** shadcn/ui + Tailwind CSS
 
 ## Getting Started
 
-### Prerequisites
-
-- Ensure Node.js and npm are installed on your machine.
-- Obtain API keys from Clerk, Supabase, and Uploadthing.
-
-### Obtaining API Keys
-
-- **Clerk**: [Generate your Clerk API key here](https://www.clerk.com/).
-- **Supabase**: [Get your Supabase API key here](https://www.supabase.com).
-- **Uploading**: [Get your Uploadthing API key here](https://www.uploadthing.com).
-
-### Installation
-
-1. Clone the repository:
-    ```
-    git clone https://github.com/drylikov/CMS.git
-    ```
-2. Install the required dependencies:
-    ```
-    npm install
-    ```
-    or
-    ```
-    bun install
-    ```
-3. Create a `.env` file in the root of your project and add your API keys:
-    ```
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-    CLERK_SECRET_KEY=
-    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
-    WEBHOOK_SECRET=
-    NEXT_PUBLIC_SUPABASE_URL=
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=
-    DATABASE_URL=
-    DIRECT_URL=    
-    ```
-
-### Running the Server
-
-To start the server, execute:
+1. Clone the repository and install dependencies:
+```bash
+npm install
 ```
+
+2. Set up your Convex project:
+```bash
+npx convex dev
+```
+
+3. Configure authentication:
+```bash
+npx @convex-dev/auth
+```
+
+4. Start the development server:
+```bash
 npm run dev
 ```
-or
-```
-yarn dev
-```
 
+---
 
-## Contributing
-
-Contributions to the project are welcome. Feel free to fork the repository, make your changes, and submit a pull request. You can also open issues to suggest improvements or report bugs.
+© 2025 Conduit CMS. All rights reserved.

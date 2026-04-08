@@ -10,12 +10,17 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createDocument } from '@/utils/actions/articles/create-document'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
+import { useRouter } from 'next/navigation';
 
 export default function CreateDocument() {
   const [open, setOpen] = useState<boolean>(false);
+  const actCreateDocument = useMutation(api.mutations.createDocument);
+  const router = useRouter();
 
   const {
     register,
@@ -26,11 +31,12 @@ export default function CreateDocument() {
 
   const onSubmit = async (data: any) => {
     try {
-      const response = await createDocument(data?.name)
+      const id = await actCreateDocument({ title: data?.name })
       setOpen(false)
-      return response
-    } catch (error) {
-      return error
+      // A1 fix: redirect straight into the editor
+      router.push(`/cms/documents/${id}`)
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create document");
     }
   }
 

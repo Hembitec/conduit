@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { storeDocument } from "@/utils/actions/articles/store-document";
-import { useGetDocumentById } from "@/utils/hooks/useGetDocumentById";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -17,39 +18,34 @@ import { useRouter } from "next/navigation";
 
 export function SubmitDocument({ html, id, title }: { html: string, id: string, title: string }) {
   const [loading, setLoading] = useState<boolean>(false);
-  const { refetch } = useGetDocumentById(id)
   const [open, setOpen] = useState<boolean>(false);
   const router = useRouter()
+  const actStoreDocument = useMutation(api.mutations.storeDocument);
 
   const {
     register,
     handleSubmit,
-    watch,
     reset,
     formState: { errors },
   } = useForm()
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (formData: any) => {
     setLoading(true)
     try {
-      const result = await storeDocument(data?.title, html, id)
-
+      await actStoreDocument({ id: id as Id<"documents">, title: formData?.title, document: html })
       setLoading(false)
-      toast("Article has been submitted, you can publish the article by going to 'Publish Article' tab", {
-        description: new Date().toLocaleTimeString(),
+      toast("Document saved! Head to Publish Article to publish it.", {
         action: {
           label: "Publish",
           onClick: () => router.push("/cms/publish"),
         },
       })
-      refetch()
       setOpen(false)
       reset()
-      return result
-
-    } catch (error) {
+      router.push("/cms/publish")
+    } catch (error: any) {
       setLoading(false)
-      return error
+      toast.error(error.message || "Failed to submit document");
     }
   }
 

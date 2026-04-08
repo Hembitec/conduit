@@ -44,15 +44,15 @@ export const getAllArticles = query({
         // Enrich with author and category names
         return await Promise.all(
             blogs.map(async (blog) => {
-                const author = blog.authorId
-                    ? await ctx.db.get(blog.authorId)
-                    : null;
+                const author = blog.authorId ? await ctx.db.get(blog.authorId) : null;
                 const category = blog.categoryId
                     ? await ctx.db.get(blog.categoryId)
                     : null;
                 return {
                     ...blog,
-                    author: author ? { name: author.name, profileImg: author.profileImg } : null,
+                    author: author
+                        ? { name: author.name, profileImg: author.profileImg }
+                        : null,
                     category: category ? { name: category.name } : null,
                 };
             })
@@ -74,13 +74,11 @@ export const getArticleBySlug = query({
         if (!blog) return null;
 
         const author = blog.authorId ? await ctx.db.get(blog.authorId) : null;
-        const category = blog.categoryId ? await ctx.db.get(blog.categoryId) : null;
+        const category = blog.categoryId
+            ? await ctx.db.get(blog.categoryId)
+            : null;
 
-        return {
-            ...blog,
-            author: author ?? null,
-            category: category ?? null,
-        };
+        return { ...blog, author: author ?? null, category: category ?? null };
     },
 });
 
@@ -124,18 +122,26 @@ export const readPublicArticle = query({
             .withIndex("by_slug", (q) => q.eq("slug", args.slug))
             .unique();
 
-        if (!blog || !blog.published) return null;
+        // Allow access if: published (public) OR shareable (direct link)
+        if (!blog || (!blog.published && !blog.shareable)) return null;
 
         const author = blog.authorId ? await ctx.db.get(blog.authorId) : null;
         const category = blog.categoryId
             ? await ctx.db.get(blog.categoryId)
             : null;
 
-        return {
-            ...blog,
-            author: author ?? null,
-            category: category ?? null,
-        };
+        return { ...blog, author: author ?? null, category: category ?? null };
+    },
+});
+
+export const getUserByApiKey = query({
+    args: { apiKey: v.string() },
+    handler: async (ctx, args) => {
+        const profile = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_api_key", (q) => q.eq("apiKey", args.apiKey))
+            .unique();
+        return profile ?? null;
     },
 });
 
@@ -174,37 +180,43 @@ export const getCommentsByBlog = query({
     },
 });
 
+// FIX: Was doing a full table scan on comments — now uses the by_blog index
+// for each of the user's blogs instead of loading all comments globally.
 export const getAllComments = query({
     args: {},
     handler: async (ctx) => {
         const userId = await getAuthUserId(ctx);
         if (!userId) return [];
 
-        // Get all blogs belonging to this user
+        // Get user's blogs (indexed)
         const userBlogs = await ctx.db
             .query("blogs")
             .withIndex("by_user", (q) => q.eq("userId", userId))
             .collect();
-        const blogIds = new Set(userBlogs.map((b) => b._id));
 
-        // Get all comments for user's blogs
-        const allComments = await ctx.db.query("comments").order("desc").collect();
-        const userComments = allComments.filter((c) => blogIds.has(c.blogId));
-
-        return await Promise.all(
-            userComments.map(async (comment) => {
-                const blog = await ctx.db.get(comment.blogId);
-                return {
+        // Query comments per blog (using index each time — no full table scan)
+        const commentGroups = await Promise.all(
+            userBlogs.map(async (blog) => {
+                const comments = await ctx.db
+                    .query("comments")
+                    .withIndex("by_blog", (q) => q.eq("blogId", blog._id))
+                    .order("desc")
+                    .collect();
+                return comments.map((comment) => ({
                     ...comment,
-                    blogTitle: blog?.title ?? "Unknown",
-                };
+                    blogTitle: blog.title,
+                }));
             })
         );
+
+        return commentGroups.flat();
     },
 });
 
 // ─── Analytics Queries ───────────────────────────────────────────
 
+// FIX: Was doing a full pageViews scan when no blogId given — now always
+// fetches per blog using the index, even for the "all blogs" case.
 export const getPageViews = query({
     args: {
         blogId: v.optional(v.id("blogs")),
@@ -219,34 +231,45 @@ export const getPageViews = query({
                 .query("pageViews")
                 .withIndex("by_blog", (q) => q.eq("blogId", args.blogId!))
                 .collect();
-            if (args.since) {
-                return views.filter((v) => v.timestamp >= args.since!);
-            }
-            return views;
+            return args.since
+                ? views.filter((v) => v.timestamp >= args.since!)
+                : views;
         }
 
-        // All page views for user's blogs
+        // All page views for user's blogs — use index per blog
         const userBlogs = await ctx.db
             .query("blogs")
             .withIndex("by_user", (q) => q.eq("userId", userId))
             .collect();
-        const blogIds = new Set(userBlogs.map((b) => b._id));
-        const allViews = await ctx.db.query("pageViews").collect();
-        const filtered = allViews.filter((v) => blogIds.has(v.blogId));
-        if (args.since) {
-            return filtered.filter((v) => v.timestamp >= args.since!);
-        }
-        return filtered;
+
+        const viewGroups = await Promise.all(
+            userBlogs.map((blog) =>
+                ctx.db
+                    .query("pageViews")
+                    .withIndex("by_blog", (q) => q.eq("blogId", blog._id))
+                    .collect()
+            )
+        );
+
+        const allViews = viewGroups.flat();
+        return args.since
+            ? allViews.filter((v) => v.timestamp >= args.since!)
+            : allViews;
     },
 });
 
-// ─── User Queries ────────────────────────────────────────────────
+// ─── User / Profile Queries ──────────────────────────────────────
 
 export const currentUser = query({
     args: {},
     handler: async (ctx) => {
         const userId = await getAuthUserId(ctx);
         if (!userId) return null;
-        return await ctx.db.get(userId);
+        const user = await ctx.db.get(userId);
+        const profile = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_user", (q) => q.eq("userId", userId))
+            .unique();
+        return { ...user, ...profile };
     },
 });

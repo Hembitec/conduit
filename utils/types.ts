@@ -1,44 +1,58 @@
-import { UUID } from "crypto";
+import { Id } from "@/convex/_generated/dataModel";
 
 export interface Article {
-  id: number;
-  created_at: string;
-  blog_html: string;
-  blog_markdown: string;
-  thumbnail: string;
-  thumbnail_alt: string;
-  image: string;
-  image_alt: string;
-  category_id: number;
-  author_id: UUID;
+  _id: Id<"blogs">;
+  _creationTime: number;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   slug: string;
-  keywords: string[];
-  author: Author;
-  category: Category;
-  shareable: boolean;
+  blogHtml: string;
+  image?: string;
+  imageAlt?: string;
+  metaDescription?: string;
+  categoryId?: Id<"categories">;
+  authorId?: Id<"authors">;
+  keywords?: string[];
   published: boolean;
+  shareable: boolean;
+  viewCount: number;
+  readingTime?: number;
+  userId: Id<"users">;
+  author?: {
+    _id: Id<"authors">;
+    _creationTime: number;
+    name: string;
+    profileImg?: string;
+    instagram?: string;
+    twitter?: string;
+    userId: Id<"users">;
+  } | null;
+  category?: {
+    name: string;
+  } | null;
 }
 
 export interface Author {
-  author_profile_img: string;
-  author_id: string;
-  author_name: string;
-  author_instagram: string;
-  author_twitter: string;
+  _id: Id<"authors">;
+  _creationTime: number;
+  name: string;
+  profileImg?: string;
+  instagram?: string;
+  twitter?: string;
+  userId: Id<"users">;
 }
 
 export interface Category {
-  id: number;
-  category: string;
+  _id: Id<"categories">;
+  _creationTime: number;
+  name: string;
+  userId: Id<"users">;
 }
 
 export interface Document {
-  id: number;
-  created_at: string;
-  document_id: string;
-  document: string;
+  _id: Id<"documents">;
+  _creationTime: number;
   title: string;
-  user_id: string;
+  document: string;
+  userId: Id<"users">;
 }

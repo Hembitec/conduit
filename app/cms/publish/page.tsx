@@ -12,25 +12,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { storeArticles } from "@/utils/actions/articles/store-articles";
-import { useGetAllAuthors } from "@/utils/hooks/useGetAllAuthors";
-import { useGetAllCategories } from "@/utils/hooks/useGetAllCategories";
-import { useGetAllDocuments } from "@/utils/hooks/useGetAllDocuments";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { UploadButton } from "@/components/UploadButton";
+import { ConvexError } from "convex/values";
+import { useRouter } from "next/navigation";
 
 const FormSchema = z.object({
-  title: z.string(),
+  title: z.string().min(1, "Title is required"),
   subtitle: z.string(),
-  slug: z.string(),
+  slug: z.string().min(1, "Slug is required"),
   keywords: z.string(),
   image_alt: z.string(),
   author: z.string(),
   category: z.string(),
-  article: z.string()
+  article: z.string().min(1, "Please select a document")
 })
 
 export default function Publish() {
@@ -50,23 +52,56 @@ export default function Publish() {
   })
 
   const [imageUploadUrl, setImageUploadUrl] = useState<string>("")
+  const router = useRouter()
 
+  const documentData = useQuery(api.queries.getAllDocuments);
+  const authorsData = useQuery(api.queries.getAllAuthors);
+  const categoryData = useQuery(api.queries.getAllCategories);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: documentData } = useGetAllDocuments() as { data: any[] | undefined };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: authorsData } = useGetAllAuthors() as { data: any[] | undefined };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: categoryData } = useGetAllCategories() as { data: any[] | undefined };
+  // W2-3: Auto-generate slug from title
+  const titleValue = form.watch("title")
+  useEffect(() => {
+    if (titleValue) {
+      const slug = titleValue
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+      form.setValue("slug", slug, { shouldValidate: false })
+    }
+  }, [titleValue, form])
+
+  const actStoreArticles = useMutation(api.mutations.storeArticle);
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
+    // A5 fix: look up the actual HTML from the fetched documentData by ID
+    const selectedDoc = documentData?.find((d: any) => d._id === data.article);
+    const blogHtml = selectedDoc?.document ?? "";
     try {
-      const response = await storeArticles(data?.title, data?.subtitle, data?.slug, data?.article, data?.author, data?.category, data?.keywords, imageUploadUrl, data?.image_alt)
-      toast("Article is published")
-      form.reset()
-      return response
-    } catch (error) {
-      return error
+      const response = await actStoreArticles({
+        title: data?.title,
+        subtitle: data?.subtitle,
+        slug: data?.slug,
+        blogHtml,
+        authorId: data?.author as Id<"authors">,
+        categoryId: data?.category as Id<"categories">,
+        keywords: data?.keywords ? data.keywords.split(",").map((k: string) => k.trim()).filter(Boolean) : [],
+        imageAlt: data?.image_alt,
+        image: imageUploadUrl
+      });
+      toast("Article is published");
+      form.reset();
+      setImageUploadUrl("");
+      // W2-5: redirect to dashboard to see the new article
+      router.push("/cms");
+      return response;
+    } catch (error: unknown) {
+      const message = error instanceof ConvexError
+        ? (error.data as string)
+        : "Failed to publish article";
+      toast.error(message);
+      return error;
     }
   }
 
@@ -142,17 +177,11 @@ export default function Publish() {
             </div>
             <div className="flex flex-col justify-center items-start w-full gap-3">
               <Label>Upload Article Image</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    toast("Image upload will be available soon (R2 integration pending)");
-                  }
-                }}
+              <UploadButton
+                onUploadComplete={(url) => setImageUploadUrl(url)}
+                label="Select Article Image"
               />
-             {imageUploadUrl !== "" && <div className="flex flex-col justify-center items-start w-full gap-3 mt-2">
+              {imageUploadUrl !== "" && <div className="flex flex-col justify-center items-start w-full gap-3 mt-2">
                 <Label>Image Url</Label>
                 <Input value={imageUploadUrl} onChange={(e) => setImageUploadUrl(e.target.value)} />
               </div>}
@@ -186,8 +215,8 @@ export default function Publish() {
                       </FormControl>
                       <SelectContent>
                         {authorsData?.map((info: any) => (
-                          <div key={info?.id}>
-                            <SelectItem value={info?.author_id}>{info?.author_name}</SelectItem>
+                          <div key={info?._id}>
+                            <SelectItem value={info?._id}>{info?.name}</SelectItem>
                           </div>
                         ))}
                       </SelectContent>
@@ -210,8 +239,8 @@ export default function Publish() {
                       </FormControl>
                       <SelectContent>
                         {categoryData?.map((info: any) => (
-                          <div key={info?.id}>
-                            <SelectItem value={String(info?.id)}>{info?.category}</SelectItem>
+                          <div key={info?._id}>
+                            <SelectItem value={String(info?._id)}>{info?.name}</SelectItem>
                           </div>
                         ))}
                       </SelectContent>
@@ -235,8 +264,8 @@ export default function Publish() {
                     </FormControl>
                     <SelectContent>
                       {documentData?.map((info: any) => (
-                        <div key={info?.id}>
-                          <SelectItem value={info?.document}>{info?.title}</SelectItem>
+                        <div key={info?._id}>
+                          <SelectItem value={info?._id}>{info?.title}</SelectItem>
                         </div>
                       ))}
                     </SelectContent>

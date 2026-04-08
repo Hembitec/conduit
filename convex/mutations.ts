@@ -1,5 +1,5 @@
 import { mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ─── Document Mutations ──────────────────────────────────────────
@@ -65,7 +65,16 @@ export const storeArticle = mutation({
         const userId = await getAuthUserId(ctx);
         if (!userId) throw new Error("Unauthorized");
 
-        // Calculate reading time (words / 200)
+        // Reject duplicate slugs for this user
+        const existing = await ctx.db
+            .query("blogs")
+            .withIndex("by_user_and_slug", (q) =>
+                q.eq("userId", userId).eq("slug", args.slug)
+            )
+            .unique();
+        if (existing) throw new ConvexError("An article with this slug already exists");
+
+        // Calculate reading time (words / 200 wpm)
         const wordCount = args.blogHtml.replace(/<[^>]*>/g, "").split(/\s+/).length;
         const readingTime = Math.ceil(wordCount / 200);
 
@@ -80,10 +89,19 @@ export const storeArticle = mutation({
     },
 });
 
+// FIX: Was only updating blogHtml — now accepts all editable fields
 export const updateArticle = mutation({
     args: {
         slug: v.string(),
-        blogHtml: v.string(),
+        title: v.optional(v.string()),
+        subtitle: v.optional(v.string()),
+        blogHtml: v.optional(v.string()),
+        image: v.optional(v.string()),
+        imageAlt: v.optional(v.string()),
+        metaDescription: v.optional(v.string()),
+        categoryId: v.optional(v.id("categories")),
+        authorId: v.optional(v.id("authors")),
+        keywords: v.optional(v.array(v.string())),
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
@@ -97,12 +115,18 @@ export const updateArticle = mutation({
             .unique();
         if (!blog) throw new Error("Article not found");
 
-        // Recalculate reading time
-        const wordCount = args.blogHtml.replace(/<[^>]*>/g, "").split(/\s+/).length;
-        const readingTime = Math.ceil(wordCount / 200);
+        const { slug, blogHtml, ...rest } = args;
+
+        // Recalculate reading time if blogHtml was updated
+        const readingTime = blogHtml
+            ? Math.ceil(
+                blogHtml.replace(/<[^>]*>/g, "").split(/\s+/).length / 200
+            )
+            : blog.readingTime;
 
         await ctx.db.patch(blog._id, {
-            blogHtml: args.blogHtml,
+            ...rest,
+            ...(blogHtml ? { blogHtml } : {}),
             readingTime,
         });
     },
@@ -177,10 +201,7 @@ export const createAuthor = mutation({
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
         if (!userId) throw new Error("Unauthorized");
-        return await ctx.db.insert("authors", {
-            ...args,
-            userId,
-        });
+        return await ctx.db.insert("authors", { ...args, userId });
     },
 });
 
@@ -198,13 +219,9 @@ export const createCategory = mutation({
             .withIndex("by_user", (q) => q.eq("userId", userId))
             .collect();
         if (existing.some((c) => c.name.toLowerCase() === args.name.toLowerCase())) {
-            throw new Error("Category already exists");
+            throw new ConvexError("Category already exists");
         }
-
-        return await ctx.db.insert("categories", {
-            name: args.name,
-            userId,
-        });
+        return await ctx.db.insert("categories", { name: args.name, userId });
     },
 });
 
@@ -231,11 +248,19 @@ export const createComment = mutation({
     },
 });
 
+// FIX: Added ownership check — only the blog's owner can approve/delete comments
 export const approveComment = mutation({
     args: { id: v.id("comments"), approved: v.boolean() },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
         if (!userId) throw new Error("Unauthorized");
+
+        const comment = await ctx.db.get(args.id);
+        if (!comment) throw new Error("Comment not found");
+
+        const blog = await ctx.db.get(comment.blogId);
+        if (!blog || blog.userId !== userId) throw new Error("Forbidden");
+
         await ctx.db.patch(args.id, { approved: args.approved });
     },
 });
@@ -245,6 +270,13 @@ export const deleteComment = mutation({
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
         if (!userId) throw new Error("Unauthorized");
+
+        const comment = await ctx.db.get(args.id);
+        if (!comment) throw new Error("Comment not found");
+
+        const blog = await ctx.db.get(comment.blogId);
+        if (!blog || blog.userId !== userId) throw new Error("Forbidden");
+
         await ctx.db.delete(args.id);
     },
 });
@@ -257,35 +289,70 @@ export const trackPageView = mutation({
         const blog = await ctx.db.get(args.blogId);
         if (!blog) return;
 
-        // Insert page view record
         await ctx.db.insert("pageViews", {
             blogId: args.blogId,
             timestamp: Date.now(),
         });
 
-        // Increment view count on the blog
         await ctx.db.patch(args.blogId, {
             viewCount: blog.viewCount + 1,
         });
     },
 });
 
-// ─── User Mutations ──────────────────────────────────────────────
+// ─── User / Profile Mutations ────────────────────────────────────
 
+// FIX: Was using Math.random() which is not crypto-safe — now uses crypto.getRandomValues
 export const generateApiKey = mutation({
     args: {},
     handler: async (ctx) => {
         const userId = await getAuthUserId(ctx);
         if (!userId) throw new Error("Unauthorized");
 
-        // Generate a random API key
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        let apiKey = "cms_";
-        for (let i = 0; i < 32; i++) {
-            apiKey += chars.charAt(Math.floor(Math.random() * chars.length));
+        // Generate a cryptographically secure 32-byte hex key
+        const array = new Uint8Array(32);
+        crypto.getRandomValues(array);
+        const apiKey =
+            "cms_" +
+            Array.from(array)
+                .map((b) => b.toString(16).padStart(2, "0"))
+                .join("");
+
+        // Store in userProfiles (not the auth users table)
+        const profile = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_user", (q) => q.eq("userId", userId))
+            .unique();
+
+        if (profile) {
+            await ctx.db.patch(profile._id, { apiKey });
+        } else {
+            await ctx.db.insert("userProfiles", { userId, apiKey });
         }
 
-        await ctx.db.patch(userId, { apiKey });
         return apiKey;
+    },
+});
+
+// Create or update user profile on first sign-in
+export const upsertUserProfile = mutation({
+    args: {
+        name: v.optional(v.string()),
+        image: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) throw new Error("Unauthorized");
+
+        const existing = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_user", (q) => q.eq("userId", userId))
+            .unique();
+
+        if (existing) {
+            await ctx.db.patch(existing._id, args);
+        } else {
+            await ctx.db.insert("userProfiles", { userId, ...args });
+        }
     },
 });

@@ -1,13 +1,23 @@
 "use client"
 
 import { Profile } from "@/components/Profile"
-import { Menu } from 'lucide-react'
+import { LogOut, Menu } from 'lucide-react'
 import { Dialog, DialogClose } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../../../components/ui/sheet"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useAuthActions } from "@convex-dev/auth/react"
 
 export default function DashboardNavMobile() {
+  const router = useRouter();
+  const { signOut } = useAuthActions();
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/");
+  }
+
   return (
     <header className="flex h-14 justify-between min-[825px]:justify-end items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
       <Dialog>
@@ -16,9 +26,9 @@ export default function DashboardNavMobile() {
         </SheetTrigger>
         <SheetContent side="left">
           <SheetHeader>
-            <SheetTitle>SupaNext CMS</SheetTitle>
+            <SheetTitle>Conduit CMS</SheetTitle>
             <SheetDescription>
-              An opensource blog CMS built using Nextjs, Supabase & TipTap
+              A modern blog CMS built with Next.js, Convex & TipTap
             </SheetDescription>
           </SheetHeader>
           <div className="flex flex-col space-y-3 mt-4">
@@ -57,6 +67,16 @@ export default function DashboardNavMobile() {
                 <Button variant="outline" className="w-full">Settings</Button>
               </Link>
             </DialogClose>
+            <div className="border-t pt-3 mt-3">
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-2"
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </Button>
+            </div>
           </div>
         </SheetContent>
       </Dialog>

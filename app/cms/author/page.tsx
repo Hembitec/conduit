@@ -10,12 +10,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createAuthor } from "@/utils/actions/author/create-author";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { z } from "zod";
+import { UploadButton } from "@/components/UploadButton";
 
 const FormSchema = z.object({
   name: z.string(),
@@ -35,18 +37,22 @@ export default function Author() {
   })
 
   const [imageUploadUrl, setImageUploadUrl] = useState<string>("");
+  const actCreateAuthor = useMutation(api.mutations.createAuthor);
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
-      const response = await createAuthor(data?.name, data?.instagram, data?.twitter, imageUploadUrl!)
-      if (response?.error) {
-        toast("Author creation failed")
-        return
-      }
-      toast("Author has been created")
+      const response = await actCreateAuthor({
+        name: data?.name,
+        instagram: data?.instagram,
+        twitter: data?.twitter,
+        profileImg: imageUploadUrl || undefined
+      });
+      toast("Author has been created");
       form.reset()
+      setImageUploadUrl("");
       return response
-    } catch (error) {
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create author");
       return error
     }
   }
@@ -104,15 +110,9 @@ export default function Author() {
 
             <div className="flex flex-col justify-center items-start w-full gap-3">
               <Label>Upload Author Image</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    toast("Image upload will be available soon (R2 integration pending)");
-                  }
-                }}
+              <UploadButton
+                onUploadComplete={(url) => setImageUploadUrl(url)}
+                label="Select Profile Image"
               />
               {imageUploadUrl !== "" && <div className="flex flex-col justify-center items-start w-full gap-3 mt-2">
                 <Label>Image Url</Label>

@@ -1,28 +1,37 @@
 "use client"
 
-import { Separator } from '@radix-ui/react-dropdown-menu'
+import { Separator } from '@/components/ui/separator'
 import clsx from 'clsx'
 import {
   BookA,
   BookCheck,
   Home,
+  LogOut,
   NetworkIcon,
   Pen,
   Settings,
   Table
 } from "lucide-react"
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useAuthActions } from '@convex-dev/auth/react'
 
 export default function DashboardNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { signOut } = useAuthActions();
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/");
+  }
 
   return (
     <div className="hidden border-r bg-muted/40 md:block ">
       <div className="flex h-full max-h-screen flex-col gap-2 ">
         <div className="flex  items-center  border-b h-[60px] px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span className="text-lg">SupaNext CMS</span>
+            <span className="text-lg">Conduit CMS</span>
           </Link>
         </div>
         <div className="flex-1">
@@ -33,7 +42,6 @@ export default function DashboardNav() {
               })}
               href="/cms"
             >
-
               <Home className="h-4 w-4" />
               Dashboard
             </Link>
@@ -93,6 +101,15 @@ export default function DashboardNav() {
               Settings
             </Link>
           </nav>
+        </div>
+        <div className="border-t px-4 py-4">
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </button>
         </div>
       </div>
     </div>

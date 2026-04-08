@@ -8,9 +8,8 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog"
-import { statusBlogs } from '@/utils/actions/blog/status-publish-blog'
-import { deleteBlog } from '@/utils/actions/blog/delete-blog'
 import { useRouter } from 'next/navigation'
+import { useMutation, useQuery } from "convex/react";
 import { ClipboardCheckIcon, Edit, Share } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button';
@@ -24,41 +23,42 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from '@/components/ui/separator';
 import { useForm } from 'react-hook-form'
-import { useGetArticleBySlug } from '@/utils/hooks/useGetArticleBySlug'
+import { api } from "@/convex/_generated/api";
 import { toast } from 'sonner'
-import { shareArticle } from '@/utils/actions/articles/share-article'
-import { Article } from '@/utils/types'
+import { ConvexError } from "convex/values";
 
-export default function ManageArticle({ params, response }: {
+export default function ManageArticle({ params }: {
   params: {
     slug: string
-  },
-  response: Article[]
+  }
 }) {
 
   const [open, setOpen] = useState<boolean>(false);
   const [openDelete, setOpenDelete] = useState<boolean>(false);
   const router = useRouter()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, isPending, refetch } = useGetArticleBySlug(params?.slug) as { data: any[] | undefined; isPending: boolean; refetch: () => void };
+  const actDeleteBlog = useMutation(api.mutations.deleteBlog);
+  const actStatusBlog = useMutation(api.mutations.statusBlog);
+  const actShareArticle = useMutation(api.mutations.shareArticle);
+
+  const data = useQuery(api.queries.getArticleBySlug, { slug: params?.slug });
+  const isPending = data === undefined;
 
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm()
 
-  const onSubmit = async (data: any) => {
-    const shareSetting = data.shareSetting === 'true'; // Convert back to boolean
+  const onSubmit = async (submitData: any) => {
+    const shareSetting = submitData.shareSetting === 'true';
     try {
-      const response = await shareArticle(params?.slug, shareSetting)
-      toast("Article shareability changed")
-      refetch()
-      return response
-    } catch (error) {
-      return error
+      const response = await actShareArticle({ slug: params?.slug, shareable: shareSetting });
+      toast("Article shareability changed");
+      return response;
+    } catch (error: unknown) {
+      const message = error instanceof ConvexError ? (error.data as string) : "Failed to update shareability";
+      toast.error(message);
     }
   };
 
@@ -78,7 +78,7 @@ export default function ManageArticle({ params, response }: {
             </h4>
             <Separator className='w-full mt-3' />
             <form onSubmit={handleSubmit(onSubmit)}>
-              {<RadioGroup defaultValue={data?.[0]?.shareable ? "true" : "false"} {...register("shareSetting")} className='flex flex-col gap-2 py-3'>
+              {<RadioGroup defaultValue={data?.shareable ? "true" : "false"} {...register("shareSetting")} className='flex flex-col gap-2 py-3'>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="true" id="publicOption" />
                   <Label>Public</Label>
@@ -91,9 +91,9 @@ export default function ManageArticle({ params, response }: {
               <Button type='submit' variant="outline">Update</Button>
             </form>
             <div className='flex gap-2 mt-4'>
-              <Input defaultValue={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/article/public/${data?.[0]?.id}`} />
-              <Button size="icon" disabled={!data?.[0]?.shareable} onClick={() => {
-                navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/article/public/${data?.[0]?.id}`)
+              <Input defaultValue={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/article/public/${data?.slug}`} />
+              <Button size="icon" disabled={!data?.shareable} onClick={() => {
+                navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/article/public/${data?.slug}`)
                 toast("Public article url has been copied")
               }}>
                 <ClipboardCheckIcon />
@@ -120,13 +120,18 @@ export default function ManageArticle({ params, response }: {
             </DialogDescription>
           </DialogHeader>
           <Button type="submit" size="sm" onClick={async () => {
-            await deleteBlog(params?.slug)
-            setOpenDelete(false)
-            router.push("/cms")
+            try {
+              await actDeleteBlog({ slug: params?.slug })
+              setOpenDelete(false)
+              router.push("/cms")
+            } catch (error: unknown) {
+              const message = error instanceof ConvexError ? (error.data as string) : "Failed to delete article";
+              toast.error(message);
+            }
           }}>Yes, Delete</Button>
         </DialogContent>
       </Dialog>
-      {response?.[0]?.published ?
+      {data?.published ?
         <Dialog open={open} onOpenChange={setOpen} >
           <DialogTrigger asChild>
             <Button variant="outline">Unpublish</Button>
@@ -139,8 +144,13 @@ export default function ManageArticle({ params, response }: {
               </DialogDescription>
             </DialogHeader>
             <Button type="submit" onClick={async () => {
-              await statusBlogs(params?.slug, !response?.[0]?.published)
-              setOpen(false)
+              try {
+                await actStatusBlog({ slug: params?.slug, published: !data?.published })
+                setOpen(false)
+              } catch (error: unknown) {
+                const message = error instanceof ConvexError ? (error.data as string) : "Failed to update status";
+                toast.error(message);
+              }
             }}>Yes, Unpublish</Button>
           </DialogContent>
         </Dialog> : <Dialog>
@@ -155,8 +165,13 @@ export default function ManageArticle({ params, response }: {
               </DialogDescription>
             </DialogHeader>
             <Button type="submit" onClick={async () => {
-              await statusBlogs(params?.slug, !response?.[0]?.published)
-              setOpen(false)
+              try {
+                await actStatusBlog({ slug: params?.slug, published: !data?.published })
+                setOpen(false)
+              } catch (error: unknown) {
+                const message = error instanceof ConvexError ? (error.data as string) : "Failed to update status";
+                toast.error(message);
+              }
             }}>Yes, Publish</Button>
           </DialogContent>
         </Dialog>}

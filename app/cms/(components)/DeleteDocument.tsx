@@ -8,13 +8,17 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog"
-import { deleteDocument } from '@/utils/actions/articles/delete-document'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { toast } from "sonner";
 
 export default function DeleteDocument({ id }: { id: string }) {
   const [open, setOpen] = useState<boolean>(false);
-  const router = useRouter()
+  const router = useRouter();
+  const actDeleteDocument = useMutation(api.mutations.deleteDocument);
 
   return (
     <Dialog open={open} onOpenChange={setOpen} >
@@ -30,11 +34,12 @@ export default function DeleteDocument({ id }: { id: string }) {
         </DialogHeader>
         <Button type="submit" onClick={async () => {
           try {
-            const response = await deleteDocument(id)
+            const response = await actDeleteDocument({ id: id as Id<"documents"> });
             setOpen(false)
             router.push("/cms/documents")
             return response
-          } catch (error) {
+          } catch (error: any) {
+            toast.error(error.message || "Failed to delete document");
             return error
           }
         }}>Delete</Button>
