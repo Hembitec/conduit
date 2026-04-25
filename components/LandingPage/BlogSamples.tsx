@@ -34,7 +34,7 @@ export default async function BlogSample() {
             </h1>
           </div>
           <div className='flex gap-3 justify-start items-center w-full border-b pb-4'>
-            <p className="text-gray-500">
+            <p className="text-muted-foreground">
               All these articles were generated using RankBoost AI
             </p>
           </div>

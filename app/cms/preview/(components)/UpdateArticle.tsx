@@ -13,7 +13,7 @@ import { api } from "@/convex/_generated/api";
 
 export function UpdateArticle({ html, slug }: { html: string, slug: string }) {
   const [open, setOpen] = useState<boolean>(false);
-  const actUpdateArticle = useMutation(api.mutations.updateArticle);
+  const actUpdateArticle = useMutation(api.blogs.updateArticle);
 
 
   return (
@@ -31,8 +31,9 @@ export function UpdateArticle({ html, slug }: { html: string, slug: string }) {
             toast("Article has been updated");
             setOpen(false);
             return response;
-          } catch (error: any) {
-            toast.error(error.message || "Failed to update article");
+          } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Failed to update article"
+            toast.error(message);
             return error
           }
         }}>Save changes</Button>

@@ -69,7 +69,7 @@ const SpringAnimatedFeatures = () => {
         <h1 className="scroll-m-20 text-3xl sm:text-xl md:text-3xl font-semibold tracking-tight lg:text-4xl text-center max-w-[700px]">
           Insert cool headline here
         </h1>
-        <p className="mx-auto max-w-[500px] text-gray-500 md:text-lg text-center mt-2 dark:text-gray-400">
+        <p className="mx-auto max-w-[500px] text-muted-foreground md:text-lg text-center mt-2">
           Make sure to add a headline and subheadline that makes potential users say wow.
         </p>
       </div>
@@ -96,10 +96,10 @@ const SpringAnimatedFeatures = () => {
                   className="mb-3 rounded-lg"
                   alt={project.name}
                 />
-                <div className="mb-1 text-sm font-medium text-gray-900">
+                <div className="mb-1 text-sm font-medium text-foreground">
                   {project.name}
                 </div>
-                <div className="max-w-[250px] text-sm font-normal text-gray-500">
+                <div className="max-w-[250px] text-sm font-normal text-muted-foreground">
                   {project.description}
                 </div>
               </a>

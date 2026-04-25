@@ -10,10 +10,13 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
                 ?? await ctx.db.insert("users", args.profile);
 
             // Ensure a userProfiles row always exists (idempotent backfill)
-            // Cast to any because this callback receives a generic untyped ctx
+            // @convex-dev/auth's createOrUpdateUser callback provides an untyped ctx.
+            // These casts are necessary until the library adds proper generics.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const db = ctx.db as any;
             const existingProfile = await db
                 .query("userProfiles")
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .withIndex("by_user", (q: any) => q.eq("userId", userId))
                 .unique();
             if (!existingProfile) {

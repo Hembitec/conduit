@@ -5,7 +5,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useEffect, useRef } from "react";
 
 export function TrackPageView({ blogId }: { blogId: string }) {
-  const trackView = useMutation(api.mutations.trackPageView);
+  const trackView = useMutation(api.analytics.trackPageView);
   const tracked = useRef(false);
 
   useEffect(() => {

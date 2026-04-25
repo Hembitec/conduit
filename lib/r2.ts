@@ -16,4 +16,4 @@ export const r2Client =
         : null;
 
 export const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "conduit";
-export const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_DEV_URL || "";
+export const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "";

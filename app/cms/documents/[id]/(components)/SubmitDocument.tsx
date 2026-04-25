@@ -20,7 +20,7 @@ export function SubmitDocument({ html, id, title }: { html: string, id: string, 
   const [loading, setLoading] = useState<boolean>(false);
   const [open, setOpen] = useState<boolean>(false);
   const router = useRouter()
-  const actStoreDocument = useMutation(api.mutations.storeDocument);
+  const actStoreDocument = useMutation(api.documents.storeDocument);
 
   const {
     register,
@@ -29,10 +29,14 @@ export function SubmitDocument({ html, id, title }: { html: string, id: string, 
     formState: { errors },
   } = useForm()
 
-  const onSubmit = async (formData: any) => {
+  interface DocumentFormData {
+  title?: string
+}
+
+const onSubmit = async (formData: DocumentFormData) => {
     setLoading(true)
     try {
-      await actStoreDocument({ id: id as Id<"documents">, title: formData?.title, document: html })
+      await actStoreDocument({ id: id as Id<"documents">, title: formData?.title || "Untitled", document: html })
       setLoading(false)
       toast("Document saved! Head to Publish Article to publish it.", {
         action: {
@@ -43,9 +47,10 @@ export function SubmitDocument({ html, id, title }: { html: string, id: string, 
       setOpen(false)
       reset()
       router.push("/cms/publish")
-    } catch (error: any) {
+    } catch (error: unknown) {
       setLoading(false)
-      toast.error(error.message || "Failed to submit document");
+      const message = error instanceof Error ? error.message : "Failed to submit document"
+      toast.error(message);
     }
   }
 

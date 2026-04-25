@@ -1,0 +1,67 @@
+/* Custom editor styles for embedded use in Conduit CMS */
+
+/* Override the full-screen styles for embedded use */
+.simple-editor-wrapper {
+  width: 100%;
+  height: auto;
+  min-height: 400px;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Content area - remove max-width constraint and centering */
+.simple-editor-content {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  height: auto;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-x: hidden; /* Prevent horizontal overflow */
+}
+
+/* Editor content area - set left padding to 1.5rem */
+.simple-editor-content .tiptap.ProseMirror.simple-editor {
+  flex: 1;
+  padding: 1rem 1rem 2rem 1.5rem; /* Left padding is 1.5rem */
+  min-height: 300px;
+  outline: none;
+  box-sizing: border-box; /* Include padding in width calculation */
+  max-width: 100%; /* Ensure content doesn't overflow */
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 480px) {
+  .simple-editor-content .tiptap.ProseMirror.simple-editor {
+    padding: 0.75rem 0.75rem 2rem 1rem;
+  }
+}
+
+/* Ensure proper border containment */
+.simple-editor-wrapper .tiptap-editor-content,
+.simple-editor-content .tiptap.ProseMirror {
+  border: none;
+  outline: none;
+}
+
+/* Fix overflow issues */
+.simple-editor-content .tiptap.ProseMirror {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* Ensure images don't overflow */
+.simple-editor-content .tiptap.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure all content stays within bounds */
+.simple-editor-content .tiptap.ProseMirror > * {
+  max-width: 100%;
+  box-sizing: border-box;
+}

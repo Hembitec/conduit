@@ -98,6 +98,15 @@ temp/
 .agents/
 .claude/
 .kilocode/
+.kilo/
 .kiro/
 .windsurf/
 CLAUDE.md
+
+# Yarn PnP (auto-generated, large)
+.pnp.cjs
+.pnp.loader.mjs
+.yarn/
+
+# One-off planning docs
+UI-IMPROVEMENT-PLAN.md

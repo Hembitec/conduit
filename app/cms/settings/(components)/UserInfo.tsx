@@ -1,21 +1,25 @@
 "use client"
+
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Eye, EyeOff, RefreshCw, Copy, CheckCheck } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Eye, EyeOff, RefreshCw, Copy, Check, HelpCircle, Key, User, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { toast } from 'sonner'
 import { ConvexError } from 'convex/values'
+import { useOnboarding } from '@/components/OnboardingContext'
 
 export default function UserInfo() {
-  const [showAPI, setShowAPI] = useState<boolean>(false)
+  const [showAPI, setShowAPI] = useState(false)
   const [copied, setCopied] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const { startOnboarding } = useOnboarding()
 
-  const user = useQuery(api.queries.currentUser)
-  const actGenerateApiKey = useMutation(api.mutations.generateApiKey)
+  const user = useQuery(api.users.currentUser)
+  const actGenerateApiKey = useMutation(api.users.generateApiKey)
 
   const apiKey = user?.apiKey ?? ""
 
@@ -23,7 +27,7 @@ export default function UserInfo() {
     setGenerating(true)
     try {
       await actGenerateApiKey()
-      toast("New API key generated")
+      toast.success("New API key generated")
     } catch (error: unknown) {
       const message = error instanceof ConvexError ? (error.data as string) : "Failed to generate key"
       toast.error(message)
@@ -39,73 +43,135 @@ export default function UserInfo() {
     }
     navigator.clipboard.writeText(apiKey)
     setCopied(true)
-    toast("API key copied to clipboard")
+    toast.success("API key copied to clipboard")
     setTimeout(() => setCopied(false), 2000)
   }
 
   return (
-    <div className="flex flex-col gap-6 w-[90%] md:w-[60%] lg:w-[50%] mt-4">
-      <h2 className="mt-10 scroll-m-20 border-b pb-2 w-full text-3xl font-semibold tracking-tight transition-colors first:mt-0">
-        My Profile
-      </h2>
-
-      {/* Profile Info */}
-      <div className="flex flex-col gap-3">
-        <Label>Email</Label>
-        <Input
-          value={user?.email ?? "Loading..."}
-          disabled
-          className="bg-muted"
-        />
-      </div>
-
-      {/* API Key */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <Label>API Key</Label>
-          {!apiKey && (
-            <p className="text-xs text-muted-foreground">No key yet — click Generate to create one</p>
-          )}
+    <div className="max-w-2xl mx-auto w-full space-y-8 py-6">
+      {/* Profile Section */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <User className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">Profile</h2>
         </div>
-        <div className="flex gap-2">
-          <Input
-            type={showAPI ? "text" : "password"}
-            value={apiKey || ""}
-            readOnly
-            placeholder="No API key — click Generate"
-            className="font-mono text-sm"
-          />
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setShowAPI(!showAPI)}
-            title={showAPI ? "Hide key" : "Show key"}
-          >
-            {showAPI ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleCopy}
-            disabled={!apiKey}
-            title="Copy key"
-          >
-            {copied ? <CheckCheck className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-          </Button>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                value={user?.email ?? "Loading..."}
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">
+                Your account email is managed by your authentication provider
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* API Access Section */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <Key className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">API Access</h2>
         </div>
-        <Button
-          variant="outline"
-          className="w-fit gap-2"
-          onClick={handleGenerate}
-          disabled={generating}
-        >
-          <RefreshCw className={`h-4 w-4 ${generating ? "animate-spin" : ""}`} />
-          {apiKey ? "Regenerate API Key" : "Generate API Key"}
-        </Button>
-        <p className="text-xs text-muted-foreground">
-          Use this key in the <span className="font-medium">X-Auth-Key</span> header when calling the public API.
-        </p>
-      </div>
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base">API Key</CardTitle>
+            <CardDescription>
+              Use this key in the <code className="px-1 py-0.5 bg-muted rounded text-xs font-mono">X-Auth-Key</code> header when calling the public API
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!apiKey && (
+              <div className="rounded-lg border border-dashed p-4 text-center">
+                <p className="text-sm text-muted-foreground mb-3">
+                  No API key yet. Generate one to access the public API.
+                </p>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={generating}
+                  className="gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${generating ? "animate-spin" : ""}`} />
+                  {generating ? "Generating..." : "Generate API Key"}
+                </Button>
+              </div>
+            )}
+
+            {apiKey && (
+              <>
+                <div className="flex gap-2">
+                  <Input
+                    type={showAPI ? "text" : "password"}
+                    value={apiKey}
+                    readOnly
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setShowAPI(!showAPI)}
+                    title={showAPI ? "Hide key" : "Show key"}
+                  >
+                    {showAPI ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleCopy}
+                    title="Copy key"
+                  >
+                    {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleGenerate}
+                  disabled={generating}
+                >
+                  <RefreshCw className={`h-4 w-4 ${generating ? "animate-spin" : ""}`} />
+                  Regenerate Key
+                </Button>
+              </>
+            )}
+
+            <div className="pt-4 border-t">
+              <p className="text-xs text-muted-foreground">
+                API endpoints: <code className="px-1 py-0.5 bg-muted rounded text-xs font-mono">/api/blog/all</code>, <code className="px-1 py-0.5 bg-muted rounded text-xs font-mono">/api/blog/[slug]</code>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Help Section */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <HelpCircle className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">Need Help?</h2>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground mb-4">
+              Take a guided tour to learn how to use all the features of Conduit CMS.
+            </p>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={startOnboarding}
+            >
+              <ExternalLink className="h-4 w-4" />
+              Start Welcome Tour
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   )
 }

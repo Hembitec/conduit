@@ -1,294 +1,247 @@
 "use client"
-import { Button } from '@/components/ui/button';
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import { BubbleMenu, EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { ImageIcon } from 'lucide-react';
-import { useCallback, useEffect } from 'react';
 
-import ManageArticle from '../../(components)/ManageArticle';
-import { SubmitDocument } from '@/app/cms/documents/[id]/(components)/SubmitDocument';
-import { UpdateArticle } from '../../(components)/UpdateArticle';
+import { useEffect, useRef, useState } from "react"
+import { EditorContent, EditorContext, useEditor } from "@tiptap/react"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { useParams } from "next/navigation"
 
-const MenuBar = ({ editor }: any) => {
+// --- Tiptap Core Extensions ---
+import { StarterKit } from "@tiptap/starter-kit"
+import { Image } from "@tiptap/extension-image"
+import { TaskItem, TaskList } from "@tiptap/extension-list"
+import { TextAlign } from "@tiptap/extension-text-align"
+import { Typography } from "@tiptap/extension-typography"
+import { Highlight } from "@tiptap/extension-highlight"
+import { Subscript } from "@tiptap/extension-subscript"
+import { Superscript } from "@tiptap/extension-superscript"
+import Placeholder from "@tiptap/extension-placeholder"
 
-  const addImage = useCallback(() => {
-    const url = window.prompt('URL')
+// --- UI Primitives ---
+import { Button } from "@/components/tiptap-ui-primitive/button"
+import { Spacer } from "@/components/tiptap-ui-primitive/spacer"
+import {
+  Toolbar,
+  ToolbarGroup,
+  ToolbarSeparator,
+} from "@/components/tiptap-ui-primitive/toolbar"
 
-    if (url) {
-      editor?.chain().focus().setImage({ src: url }).run()
-    }
-  }, [editor])
+// --- Tiptap UI ---
+import { HeadingDropdownMenu } from "@/components/tiptap-ui/heading-dropdown-menu"
+import { ListDropdownMenu } from "@/components/tiptap-ui/list-dropdown-menu"
+import { BlockquoteButton } from "@/components/tiptap-ui/blockquote-button"
+import { CodeBlockButton } from "@/components/tiptap-ui/code-block-button"
+import { MarkButton } from "@/components/tiptap-ui/mark-button"
+import { TextAlignButton } from "@/components/tiptap-ui/text-align-button"
+import { UndoRedoButton } from "@/components/tiptap-ui/undo-redo-button"
+import { LinkPopover } from "@/components/tiptap-ui/link-popover"
+import { ImageUploadButton } from "@/components/tiptap-ui/image-upload-button"
+import { ColorHighlightPopover } from "@/components/tiptap-ui/color-highlight-popover"
 
-  if (!editor) {
-    return null
-  }
+// --- Icons ---
+import { ArrowLeftIcon } from "@/components/tiptap-icons/arrow-left-icon"
 
-  return (
-    <div className='flex gap-3 flex-wrap border-b pb-3 mb-5'>
-      <Button
-        variant="outline"
-        onClick={() => editor.chain().focus().toggleBold().run()}
-        disabled={
-          !editor.can()
-            .chain()
-            .focus()
-            .toggleBold()
-            .run()
-        }
-        className={editor.isActive('bold') ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      >
-        B
-      </Button>
-      <button onClick={addImage}
-        className={editor.isActive('img') ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      ><ImageIcon /></button>
-      <button
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-        disabled={
-          !editor.can()
-            .chain()
-            .focus()
-            .toggleItalic()
-            .run()
-        }
-        className={editor.isActive('italic') ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      >
-        italic
-      </button>
-      <button
-        onClick={() => editor.chain().focus().toggleStrike().run()}
-        disabled={
-          !editor.can()
-            .chain()
-            .focus()
-            .toggleStrike()
-            .run()
-        }
-        className={editor.isActive('strike') ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      >
-        strike
-      </button>
-      <button
-        onClick={() => editor.chain().focus().toggleCode().run()}
-        disabled={
-          !editor.can()
-            .chain()
-            .focus()
-            .toggleCode()
-            .run()
-        }
-        className={editor.isActive('code') ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      >
-        code
-      </button>
-      <button onClick={() => editor.chain().focus().unsetAllMarks().run()} className="p-1 border rounded">
-        clear marks
-      </button>
-      <button onClick={() => editor.chain().focus().clearNodes().run()} className="p-1 border rounded">
-        clear nodes
-      </button>
-      <button
-        onClick={() => editor.chain().focus().setParagraph().run()}
-        className={editor.isActive('paragraph') ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      >
-        paragraph
-      </button>
-      <button onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={editor.isActive('heading', { level: 1 }) ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}>
-        h1
-      </button>
-      <button
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        className={editor.isActive('heading', { level: 2 }) ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      >
-        h2
-      </button>
-      <button
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        className={editor.isActive('heading', { level: 3 }) ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      >
-        h3
-      </button>
+// --- Components ---
+import { UpdateArticle } from "../../(components)/UpdateArticle"
 
-      <button
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-        className={editor.isActive('bulletList') ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      >
-        bullet list
-      </button>
-      <button
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        className={editor.isActive('orderedList') ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      >
-        ordered list
-      </button>
-      <button
-        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-        className={editor.isActive('codeBlock') ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      >
-        code block
-      </button>
-      <button
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        className={editor.isActive('blockquote') ? 'is-active p-1 border rounded bg-black text-white' : 'p-1 border rounded'}
-      >
-        blockquote
-      </button>
-      <button
-        className="p-1 border rounded hover:cursor-pointer"
-        onClick={() => editor.chain().focus().undo().run()}
-        disabled={
-          !editor.can()
-            .chain()
-            .focus()
-            .undo()
-            .run()
-        }
-      >
-        undo
-      </button>
-      <button
-        className="p-1 border rounded hover:cursor-pointer"
-        onClick={() => editor.chain().focus().redo().run()}
-        disabled={
-          !editor.can()
-            .chain()
-            .focus()
-            .redo()
-            .run()
-        }
-      >
-        redo
-      </button>
-    </div>
-  )
-}
+// --- Hooks ---
+import { useIsBreakpoint } from "@/hooks/use-is-breakpoint"
+import { useWindowSize } from "@/hooks/use-window-size"
+import { useCursorVisibility } from "@/hooks/use-cursor-visibility"
 
-export default function ArticleEditor({ params }: { params: { slug: string } }) {
+// --- Styles ---
+import "@/components/tiptap-templates/simple/simple-editor.scss"
+import "./editor-override.scss"
+import "@/components/tiptap-node/blockquote-node/blockquote-node.scss"
+import "@/components/tiptap-node/code-block-node/code-block-node.scss"
+import "@/components/tiptap-node/list-node/list-node.scss"
+import "@/components/tiptap-node/image-node/image-node.scss"
+import "@/components/tiptap-node/heading-node/heading-node.scss"
+import "@/components/tiptap-node/paragraph-node/paragraph-node.scss"
 
-  const data = useQuery(api.queries.getArticleBySlug, { slug: params?.slug });
+export default function ArticleEditor() {
+  const params = useParams()
+  const slug = params?.slug as string
+  const data = useQuery(api.blogs.getArticleBySlug, { slug })
 
-  const extensions: any = [
-    StarterKit.configure({
-      bulletList: {
-        keepMarks: true,
-        keepAttributes: false, // TODO : Making this as `false` becase marks are not preserved when I try to preserve attrs, awaiting a bit of help
-      },
-      orderedList: {
-        keepMarks: true,
-        keepAttributes: false, // TODO : Making this as `false` becase marks are not preserved when I try to preserve attrs, awaiting a bit of help
-      },
-      paragraph: {
-
-      }
-    }),
-    Link.configure({
-      HTMLAttributes: {
-        // Define attributes for the <a> tag
-        target: '_blank',
-        rel: 'noopener noreferrer nofollow',
-      },
-    }),
-    Image.configure({
-      inline: true,
-    })
-    // Color.configure({ types: [TextStyle.name, ListItem.name] }),
-    // TextStyle,
-
-  ]
+  const isMobile = useIsBreakpoint()
+  const { height } = useWindowSize()
+  const toolbarRef = useRef<HTMLDivElement>(null)
+  const [html, setHtml] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
 
   const editor = useEditor({
-    extensions,
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        autocomplete: "off",
+        autocorrect: "off",
+        autocapitalize: "off",
+        "aria-label": "Main content area, start typing to enter text.",
+        class: "simple-editor",
+      },
+    },
+    extensions: [
+      StarterKit.configure({
+        horizontalRule: false,
+        link: {
+          HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer nofollow' },
+          openOnClick: false,
+        },
+      }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Highlight.configure({ multicolor: true }),
+      Image.configure({ inline: true }),
+      Typography,
+      Superscript,
+      Subscript,
+      Placeholder.configure({
+        placeholder: "Start editing your article...",
+      }),
+    ],
     content: "",
-  }) as any
+    onUpdate: ({ editor }) => {
+      setHtml(editor.getHTML())
+    },
+  })
 
+  // Track whether we've already loaded the initial content
+  const contentLoadedRef = useRef(false)
+
+  // Load article content from Convex (once, on initial load)
   useEffect(() => {
-    if (editor && data?.blogHtml) {
-      editor.commands.setContent(data?.blogHtml)
+    if (editor && data?.blogHtml && !contentLoadedRef.current) {
+      // Defer to microtask to avoid flushSync inside React's commit phase
+      queueMicrotask(() => {
+        editor.commands.setContent(data.blogHtml)
+        contentLoadedRef.current = true
+      })
     }
-  }, [editor, data?.blogHtml]);
+  }, [editor, data?.blogHtml])
 
-
-  const html = editor?.getHTML()
-
-  const setLink = useCallback(() => {
-    const previousUrl = editor?.getAttributes('link').href
-    const url = window.prompt('URL', previousUrl)
-
-    // cancelled
-    if (url === null) {
-      return
-    }
-
-    // empty
-    if (url === '') {
-      editor?.chain().focus().extendMarkRange('link').unsetLink()
-        .run()
-
-      return
-    }
-
-    // update link
-    editor?.chain().focus().extendMarkRange('link').setLink({ href: url })
-      .run()
-  }, [editor])
+  const rect = useCursorVisibility({
+    editor,
+    overlayHeight: toolbarRef.current?.getBoundingClientRect().height ?? 0,
+  })
 
   return (
-    <div className='flex flex-col items-end w-full'>
-      <div className='flex justify-center items-center gap-3'>
-        <a href={`/cms/preview/${params?.slug}`}>
-          <Button>Preview</Button>
-        </a>
+    <div className="flex flex-col w-full h-full">
+      {/* Header with back button and save status */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-3">
+          <a href={`/cms/preview/${slug}`}>
+            <Button variant="ghost" className="gap-2">
+              <ArrowLeftIcon className="tiptap-button-icon" />
+              Back to Preview
+            </Button>
+          </a>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {isSaving ? (
+            <>
+              <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <div className="h-2 w-2 rounded-full bg-green-500" />
+              <span>Saved</span>
+            </>
+          )}
+        </div>
       </div>
-      <div className="p-4 border rounded mt-5">
-        <div className='flex pb-3 my-7'>
-          <h1 className="scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-5xl">
-            {data?.title}
-          </h1>
+
+      {/* Article Title */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">
+          {data?.title}
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Editing article content
+        </p>
+      </div>
+
+      {/* Editor */}
+      <EditorContext.Provider value={{ editor }}>
+        <div className="simple-editor-wrapper flex-1 flex flex-col border rounded-lg overflow-hidden">
+          <Toolbar
+            ref={toolbarRef}
+            style={{
+              ...(isMobile
+                ? {
+                    bottom: `calc(100% - ${height - rect.y}px)`,
+                  }
+                : {}),
+            }}
+          >
+            <ToolbarGroup>
+              <UndoRedoButton action="undo" />
+              <UndoRedoButton action="redo" />
+            </ToolbarGroup>
+
+            <ToolbarSeparator />
+
+            <ToolbarGroup>
+              <HeadingDropdownMenu modal={false} levels={[1, 2, 3]} />
+              <ListDropdownMenu
+                modal={false}
+                types={["bulletList", "orderedList", "taskList"]}
+              />
+              <BlockquoteButton />
+              <CodeBlockButton />
+            </ToolbarGroup>
+
+            <ToolbarSeparator />
+
+            <ToolbarGroup>
+              <MarkButton type="bold" />
+              <MarkButton type="italic" />
+              <MarkButton type="strike" />
+              <MarkButton type="code" />
+              <MarkButton type="underline" />
+              <LinkPopover />
+              <ColorHighlightPopover />
+            </ToolbarGroup>
+
+            <ToolbarSeparator />
+
+            <ToolbarGroup>
+              <MarkButton type="superscript" />
+              <MarkButton type="subscript" />
+            </ToolbarGroup>
+
+            <ToolbarSeparator />
+
+            <ToolbarGroup>
+              <TextAlignButton align="left" />
+              <TextAlignButton align="center" />
+              <TextAlignButton align="right" />
+              <TextAlignButton align="justify" />
+            </ToolbarGroup>
+
+            <ToolbarSeparator />
+
+            <ToolbarGroup>
+              <ImageUploadButton text="Add" />
+            </ToolbarGroup>
+
+            <Spacer />
+          </Toolbar>
+
+          <EditorContent
+            editor={editor}
+            role="presentation"
+            className="simple-editor-content flex-1 overflow-y-auto"
+          />
         </div>
-        <MenuBar editor={editor} />
-        <BubbleMenu editor={editor!} tippyOptions={{ duration: 100 }}>
-          <button
-            onClick={() => editor?.chain()?.focus()?.toggleBold()?.run()}
-            className={editor?.isActive('bold') ? 'is-active border rounded bg-black text-white border-black px-1 mx-1' : 'border-black px-1 border rounded bg-white'}
-          >
-            bold
-          </button>
-          <button
-            onClick={() => editor?.chain().focus().toggleItalic().run()}
-            className={editor?.isActive('italic') ? 'is-active border rounded bg-black text-white border-black px-1 mx-1' : 'border-black px-1 border rounded bg-white mx-1'}
-          >
-            italic
-          </button>
-          <button
-            onClick={() => editor?.chain().focus().toggleStrike().run()}
-            className={editor?.isActive('strike') ? 'is-active border rounded bg-black text-white border-black px-1 mx-1' : 'border-black px-1 border rounded bg-white'}
-          >
-            strike
-          </button>
-          <button onClick={setLink} className={editor?.isActive('link') ? 'is-active border rounded bg-black text-white border-black px-1 mx-1' : 'border-black px-1 mx-1 border rounded bg-white'}>
-            link
-          </button>
-          <button
-            className={editor?.isActive('link') ? 'is-active border rounded bg-blue-700 text-white border-black px-1 mx-1' : 'border-black px-1 mx-1 border rounded bg-white'}
-            onClick={() => editor?.chain().focus().unsetLink().run()}
-            disabled={!editor?.isActive('link')}
-          >
-            unlink
-          </button>
-        </BubbleMenu>
-        <div className="tiptap-editor">
-          <EditorContent editor={editor} />
-        </div>
-        <div className="mt-4 w-full">
-          <UpdateArticle slug={params?.slug} html={html} />
-        </div>
+      </EditorContext.Provider>
+
+      {/* Update Section */}
+      <div className="mt-4">
+        <UpdateArticle slug={slug} html={html} />
       </div>
     </div>
-
   )
 }

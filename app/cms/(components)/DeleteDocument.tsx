@@ -1,48 +1,75 @@
 "use client"
+
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from "@/components/ui/dialog"
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import { toast } from "sonner";
+import { useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { Id } from "@/convex/_generated/dataModel"
+import { toast } from "sonner"
+import { Trash2 } from 'lucide-react'
 
 export default function DeleteDocument({ id }: { id: string }) {
-  const [open, setOpen] = useState<boolean>(false);
-  const router = useRouter();
-  const actDeleteDocument = useMutation(api.mutations.deleteDocument);
+  const [isDeleting, setIsDeleting] = useState(false)
+  const router = useRouter()
+  const actDeleteDocument = useMutation(api.documents.deleteDocument)
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      await actDeleteDocument({ id: id as Id<"documents"> })
+      toast.success("Document deleted")
+      router.push("/cms/documents")
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to delete document"
+      toast.error(message)
+      setIsDeleting(false)
+    }
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen} >
-      <DialogTrigger asChild>
-        <Button>Delete</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Delete document</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to delete your document?
-          </DialogDescription>
-        </DialogHeader>
-        <Button type="submit" onClick={async () => {
-          try {
-            const response = await actDeleteDocument({ id: id as Id<"documents"> });
-            setOpen(false)
-            router.push("/cms/documents")
-            return response
-          } catch (error: any) {
-            toast.error(error.message || "Failed to delete document");
-            return error
-          }
-        }}>Delete</Button>
-      </DialogContent>
-    </Dialog>)
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button 
+          size="sm" 
+          variant="ghost" 
+          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+          aria-label="Delete document"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Document</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this document? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
 }

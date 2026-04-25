@@ -8,10 +8,15 @@
  * @module
  */
 
+import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
+import type * as authors from "../authors.js";
+import type * as blogs from "../blogs.js";
+import type * as categories from "../categories.js";
+import type * as comments from "../comments.js";
+import type * as documents from "../documents.js";
 import type * as http from "../http.js";
-import type * as mutations from "../mutations.js";
-import type * as queries from "../queries.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -20,10 +25,15 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  analytics: typeof analytics;
   auth: typeof auth;
+  authors: typeof authors;
+  blogs: typeof blogs;
+  categories: typeof categories;
+  comments: typeof comments;
+  documents: typeof documents;
   http: typeof http;
-  mutations: typeof mutations;
-  queries: typeof queries;
+  users: typeof users;
 }>;
 
 /**

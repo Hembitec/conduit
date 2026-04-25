@@ -1,18 +1,18 @@
 import { ReactNode } from "react"
-import DashboardNav from "./(components)/DashboardSidebar"
-import DashboardNavMobile from "./(components)/DashboardNav"
+import DashboardSidebar from "./(components)/DashboardSidebar"
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr] ">
-      <DashboardNav />
-      <div className="flex flex-col">
-        <DashboardNavMobile />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+    <div className="flex min-h-screen w-full bg-background">
+      {/* Sidebar - Fixed position on desktop */}
+      <DashboardSidebar />
+      
+      {/* Main Content */}
+      <main className="flex-1 w-full min-w-0 overflow-x-hidden">
+        <div className="p-4 lg:p-6 max-w-7xl mx-auto">
           {children}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   )
 }

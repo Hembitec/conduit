@@ -451,3 +451,76 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
   - `app/cms/page.tsx`, `app/cms/settings/(components)/UserInfo.tsx`, `app/cms/documents/[id]/(components)/SubmitDocument.tsx`, `app/cms/(components)/CreateDocument.tsx`, `app/cms/publish/page.tsx`, `app/cms/documents/(components)/Documents.tsx`, `app/article/public/[id]/page.tsx`
   - `components/TrackPageView.tsx`
 - **Next step**: Move on to Phase 5 (UI/UX Redesign).
+
+### 2026-04-08 — Phase 5: UI/UX Redesign (Initial Session)
+- **What was done**: Fixed authentication breaking issue (400 Bad Request on /api/auth). Updated CSS variables in globals.css to use Sage Green & Terracotta theme. Updated DashboardSidebar to use CSS variables instead of hardcoded gray colors. Added loading skeletons to CMS dashboard and documents page. Replaced TipTap editor toolbar text labels with Lucide icons.
+- **Key decisions**:
+  - Auth fix: Created `app/api/auth/route.ts` as proxy to Convex backend for auth requests
+  - Updated `proxy.ts` to use explicit `apiRoute: "/api/auth"` configuration
+  - Added font preconnect and Google Fonts links to `app/layout.tsx`
+  - Theme uses CSS variables with Tailwind 4 `@theme` directive
+- **Issues encountered & fixed**:
+  - *Auth 400 Error*: Convex Auth returning 400 on /api/auth - fixed by creating proxy API route
+  - *Missing Fonts*: Libre Bodoni and Public Sans fonts now properly loaded
+  - *Hardcoded Colors*: Updated DashboardSidebar to use `text-muted-foreground`, `bg-primary`, `hover:bg-accent`
+  - *Text Labels in Editor*: Replaced B, I, S, H1, H2, H3 text buttons with Lucide icons
+- **Files changed**:
+  - `app/globals.css` - CSS variables with Sage Green & Terracotta theme
+  - `app/layout.tsx` - Added font preconnect
+  - `app/cms/(components)/DashboardSidebar.tsx` - Updated to use CSS variables
+  - `app/cms/page.tsx` - Updated to use CSS variables
+  - `app/cms/documents/[id]/page.tsx` - Updated TipTap MenuBar with Lucide icons
+  - `app/api/auth/route.ts` - NEW - Auth proxy route
+  - `proxy.ts` - Added apiRoute configuration
+  - `app/cms/loading.tsx` - NEW - Loading skeleton for CMS
+  - `app/cms/documents/loading.tsx` - NEW - Loading skeleton for documents
+- **Next step**: Complete remaining Phase 5 tasks (article preview page, public article page), then move to Phase 6 (SEO Features)
+
+### 2026-04-25 — Codebase Audit & Git Hygiene
+
+- **What was done**: Conducted exhaustive 6-area codebase audit. Fixed all issues found:
+  1. Removed `yarn.lock` — project uses npm only
+  2. Deleted empty root `cms/` directory (leftover git submodule/clone)
+  3. Deleted empty `app/simple/` directory
+  4. Uninstalled `@supabase/auth-helpers-nextjs` (still lingered in package.json)
+  5. Stripped all 10 `console.log` statements from TipTap UI JSDoc blocks
+  6. Fixed hardcoded `text-gray-500`, `text-gray-900`, `text-gray-400` in LandingPage components
+  7. Fixed emoji icon violation (🎉 → `<Sparkles />` Lucide icon) in AnimatedGradientComponent
+  8. Fixed `bg-gray-300` → `bg-border` in AnimatedGradientComponent
+  9. Completely rewrote API docs page: fixed POST→GET bug, added response format examples, error code docs, account-scoping explainer
+  10. Moved `utils/transform-node.tsx` → `lib/transform-node.tsx`, updated both import sites
+  11. Deleted `utils/types.ts` (duplicate of `types/index.ts`)
+  12. Updated PHASE-TRACKER.md to accurately reflect Phase 0 and Phase 3 status
+
+- **Key decisions**:
+  - User confirmed: **npm only** (not yarn)
+  - User confirmed: **do NOT rename proxy.ts** — Next.js 16 uses `proxy.ts` not `middleware.ts`
+  - API is correctly scoped: each API key only returns that key owner's articles (not global)
+  - Phase 3.5 (forgot password) acknowledged as NOT DONE, deferred
+
+- **Architecture clarifications found**:
+  - `convex/http.ts` only mounts auth routes — public API uses Next.js API routes (not Convex HTTP actions)
+  - `ARCHITECTURE.md` is out of date (schema field names differ from actual schema)
+  - The public article page is still at `/article/public/[id]` (Phase 6 will migrate to `/blog/[slug]`)
+  - Comment system: backend + moderation dashboard built, but **NO public comment form exists yet**
+
+- **Issues encountered & fixed**:
+  - `npm uninstall` failed with peer dep conflict — fixed with `--legacy-peer-deps`
+  - Two `console.log` instances in TipTap hooks had special chars that `sed` couldn't match — fixed directly
+
+- **Files changed**:
+  - `yarn.lock` — DELETED
+  - `utils/types.ts` — DELETED (duplicate)
+  - `utils/transform-node.tsx` — MOVED to `lib/transform-node.tsx`
+  - `package.json` — removed `@supabase/auth-helpers-nextjs`
+  - `components/LandingPage/AnimatedGradientComponent.tsx` — emoji→Lucide, gray→border
+  - `components/LandingPage/BlogSamples.tsx` — gray→muted-foreground
+  - `components/LandingPage/MarketingCards.tsx` — 3× hardcoded grays replaced
+  - `components/tiptap-ui/*/use-*.ts` + `color-highlight-button.tsx` — 10× console.log removed
+  - `app/cms/api/page.tsx` — full rewrite with correct methods, response shapes, error codes
+  - `app/article/public/[id]/page.tsx` — import path updated
+  - `app/cms/preview/[slug]/page.tsx` — import path updated
+  - `PHASE-TRACKER.md` — Phase 0 and Phase 3 status corrected
+
+- **Next step**: Run `npm run build` to verify, then commit everything with the provided commit message
+

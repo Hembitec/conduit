@@ -44,6 +44,7 @@ export default defineSchema({
     subtitle: v.optional(v.string()),
     slug: v.string(),
     blogHtml: v.string(),
+    sourceDocumentId: v.optional(v.id("documents")),
     image: v.optional(v.string()),
     imageAlt: v.optional(v.string()),
     metaDescription: v.optional(v.string()),

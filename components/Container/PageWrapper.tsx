@@ -5,11 +5,11 @@ import Footer from '../LandingPage/Footer'
 export default function PageWrapper({ children }: { children: React.ReactNode }) {
   return (
     <>
-    <NavBar />
-    <main className="flex min-w-screen flex-col items-center justify-between pb-16">
-      {children}
-    </main>
-    <Footer />
+      <NavBar />
+      <main className="flex w-full flex-col items-center justify-between pb-16 overflow-x-hidden">
+        {children}
+      </main>
+      <Footer />
     </>
   )
 }

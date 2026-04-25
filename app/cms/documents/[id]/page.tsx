@@ -1,153 +1,328 @@
 "use client"
-import { Button } from '@/components/ui/button';
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import TiptapImage from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import { BubbleMenu, EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { ImageIcon } from 'lucide-react';
-import { use, useCallback, useEffect } from 'react';
-import { SubmitDocument } from './(components)/SubmitDocument';
-import DeleteDocument from '../../(components)/DeleteDocument';
 
-// ─── MenuBar ─────────────────────────────────────────────────────
-const MenuBar = ({ editor }: { editor: ReturnType<typeof useEditor> }) => {
-  const addImage = useCallback(() => {
-    const url = window.prompt('Image URL')
-    if (url) editor?.chain().focus().setImage({ src: url }).run()
-  }, [editor])
+import { useEffect, useRef, useState, useCallback } from "react"
+import { EditorContent, EditorContext, useEditor } from "@tiptap/react"
+import { useQuery, useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { Id } from "@/convex/_generated/dataModel"
+import { use } from "react"
 
-  if (!editor) return null
+// --- Tiptap Core Extensions ---
+import { StarterKit } from "@tiptap/starter-kit"
+import { Image } from "@tiptap/extension-image"
+import { TaskItem, TaskList } from "@tiptap/extension-list"
+import { TextAlign } from "@tiptap/extension-text-align"
+import { Typography } from "@tiptap/extension-typography"
+import { Highlight } from "@tiptap/extension-highlight"
+import { Subscript } from "@tiptap/extension-subscript"
+import { Superscript } from "@tiptap/extension-superscript"
 
-  const btn = (
-    active: boolean,
-    onClick: () => void,
-    label: React.ReactNode,
-    disabled = false
-  ) => (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={active
-        ? 'p-1 border rounded bg-foreground text-background cursor-pointer'
-        : 'p-1 border rounded hover:bg-muted cursor-pointer disabled:opacity-40'}
-    >
-      {label}
-    </button>
-  )
+import Placeholder from "@tiptap/extension-placeholder"
+import { ImageUploadNode } from "@/components/tiptap-node/image-upload-node/image-upload-node-extension"
 
-  return (
-    <div className='flex gap-2 flex-wrap border-b pb-3 mb-5'>
-      {btn(editor.isActive('bold'), () => editor.chain().focus().toggleBold().run(), <strong>B</strong>, !editor.can().chain().focus().toggleBold().run())}
-      {btn(editor.isActive('italic'), () => editor.chain().focus().toggleItalic().run(), <em>I</em>, !editor.can().chain().focus().toggleItalic().run())}
-      {btn(editor.isActive('strike'), () => editor.chain().focus().toggleStrike().run(), <s>S</s>, !editor.can().chain().focus().toggleStrike().run())}
-      {btn(editor.isActive('code'), () => editor.chain().focus().toggleCode().run(), 'Code', !editor.can().chain().focus().toggleCode().run())}
-      {btn(editor.isActive('img'), addImage, <ImageIcon className="w-4 h-4" />)}
-      <span className="border-r mx-1" />
-      {btn(editor.isActive('paragraph'), () => editor.chain().focus().setParagraph().run(), 'P')}
-      {btn(editor.isActive('heading', { level: 1 }), () => editor.chain().focus().toggleHeading({ level: 1 }).run(), 'H1')}
-      {btn(editor.isActive('heading', { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), 'H2')}
-      {btn(editor.isActive('heading', { level: 3 }), () => editor.chain().focus().toggleHeading({ level: 3 }).run(), 'H3')}
-      <span className="border-r mx-1" />
-      {btn(editor.isActive('bulletList'), () => editor.chain().focus().toggleBulletList().run(), '• List')}
-      {btn(editor.isActive('orderedList'), () => editor.chain().focus().toggleOrderedList().run(), '1. List')}
-      {btn(editor.isActive('codeBlock'), () => editor.chain().focus().toggleCodeBlock().run(), 'Code Block')}
-      {btn(editor.isActive('blockquote'), () => editor.chain().focus().toggleBlockquote().run(), '"Quote"')}
-      <span className="border-r mx-1" />
-      <button onClick={() => editor.chain().focus().unsetAllMarks().run()} className="p-1 border rounded hover:bg-muted cursor-pointer">Clear Marks</button>
-      <button onClick={() => editor.chain().focus().clearNodes().run()} className="p-1 border rounded hover:bg-muted cursor-pointer">Clear Nodes</button>
-      <span className="border-r mx-1" />
-      {btn(false, () => editor.chain().focus().undo().run(), 'Undo', !editor.can().chain().focus().undo().run())}
-      {btn(false, () => editor.chain().focus().redo().run(), 'Redo', !editor.can().chain().focus().redo().run())}
-    </div>
-  )
+// --- UI Primitives ---
+import { Button } from "@/components/tiptap-ui-primitive/button"
+import { Spacer } from "@/components/tiptap-ui-primitive/spacer"
+import {
+  Toolbar,
+  ToolbarGroup,
+  ToolbarSeparator,
+} from "@/components/tiptap-ui-primitive/toolbar"
+
+// --- Tiptap UI ---
+import { HeadingDropdownMenu } from "@/components/tiptap-ui/heading-dropdown-menu"
+import { ListDropdownMenu } from "@/components/tiptap-ui/list-dropdown-menu"
+import { BlockquoteButton } from "@/components/tiptap-ui/blockquote-button"
+import { CodeBlockButton } from "@/components/tiptap-ui/code-block-button"
+import { MarkButton } from "@/components/tiptap-ui/mark-button"
+import { TextAlignButton } from "@/components/tiptap-ui/text-align-button"
+import { UndoRedoButton } from "@/components/tiptap-ui/undo-redo-button"
+import { LinkPopover } from "@/components/tiptap-ui/link-popover"
+import { ImageUploadButton } from "@/components/tiptap-ui/image-upload-button"
+import { ColorHighlightPopover } from "@/components/tiptap-ui/color-highlight-popover"
+
+// --- Icons ---
+import { ArrowLeftIcon } from "@/components/tiptap-icons/arrow-left-icon"
+
+// --- Components ---
+import DeleteDocument from "../../(components)/DeleteDocument"
+import { SubmitDocument } from "./(components)/SubmitDocument"
+
+// --- Hooks ---
+import { useIsBreakpoint } from "@/hooks/use-is-breakpoint"
+import { useWindowSize } from "@/hooks/use-window-size"
+import { useCursorVisibility } from "@/hooks/use-cursor-visibility"
+
+// --- Styles ---
+import "@/components/tiptap-templates/simple/simple-editor.scss"
+import "./editor-override.scss"
+import "@/components/tiptap-node/blockquote-node/blockquote-node.scss"
+import "@/components/tiptap-node/code-block-node/code-block-node.scss"
+import "@/components/tiptap-node/list-node/list-node.scss"
+import "@/components/tiptap-node/image-node/image-node.scss"
+import "@/components/tiptap-node/heading-node/heading-node.scss"
+import "@/components/tiptap-node/paragraph-node/paragraph-node.scss"
+
+// Image upload handler using R2
+const handleImageUpload = async (
+  file: File,
+  onProgress?: (event: { progress: number }) => void,
+): Promise<string> => {
+  if (!file) {
+    throw new Error("No file provided")
+  }
+
+  const maxSize = 5 * 1024 * 1024 // 5MB
+  if (file.size > maxSize) {
+    throw new Error(`File size exceeds maximum allowed (5MB)`)
+  }
+
+  try {
+    // Get presigned URL from our API
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        filename: file.name,
+        contentType: file.type,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to get upload URL")
+    }
+
+    const { presignedUrl, publicUrl } = await response.json()
+
+    // Upload to R2
+    const uploadResponse = await fetch(presignedUrl, {
+      method: "PUT",
+      body: file,
+      mode: "cors",
+      headers: { "Content-Type": file.type },
+    })
+
+    if (!uploadResponse.ok) {
+      throw new Error(`Upload failed with status ${uploadResponse.status}`)
+    }
+
+    return publicUrl
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Upload failed"
+    throw new Error(message)
+  }
 }
 
-// ─── DocumentEditor ──────────────────────────────────────────────
 export default function DocumentEditor({ params }: { params: Promise<{ id: string }> }) {
-  // Next.js 16: params is a Promise — must use React.use() to unwrap
   const { id } = use(params)
+  const data = useQuery(api.documents.getDocumentById, { id: id as Id<"documents"> })
+  const [isSaving, setIsSaving] = useState(false)
+  const [html, setHtml] = useState("")
+  const saveDocument = useMutation(api.documents.storeDocument)
 
-  const data = useQuery(api.queries.getDocumentById, { id: id as Id<"documents"> });
+  const isMobile = useIsBreakpoint()
+  const { height } = useWindowSize()
+  const toolbarRef = useRef<HTMLDivElement>(null)
 
-  const extensions = [
-    StarterKit.configure({
-      bulletList: { keepMarks: true, keepAttributes: false },
-      orderedList: { keepMarks: true, keepAttributes: false },
-    }),
-    Link.configure({
-      HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer nofollow' },
-    }),
-    TiptapImage.configure({ inline: true }),
-  ]
+  // Auto-save function
+  const saveToConvex = useCallback(async (content: string) => {
+    if (!content) return
+    setIsSaving(true)
+    try {
+      await saveDocument({ 
+        id: id as Id<"documents">, 
+        title: data?.title || "Untitled", 
+        document: content 
+      })
+    } catch {
+      // Auto-save failed silently — user sees the "Saved" indicator won't update
+    } finally {
+      setIsSaving(false)
+    }
+  }, [id, data?.title, saveDocument])
 
-  const editor = useEditor({ extensions, content: "" })
-
+  // Debounced auto-save effect
   useEffect(() => {
-    if (editor && data?.document) {
-      editor.commands.setContent(data.document)
-    }
-  }, [editor, data?.document]);
+    if (!html) return
+    const timer = setTimeout(() => {
+      saveToConvex(html)
+    }, 2000) // Save after 2 seconds of inactivity
+    return () => clearTimeout(timer)
+  }, [html, saveToConvex])
 
-  const html = editor?.getHTML()
+  const editor = useEditor({
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        autocomplete: "off",
+        autocorrect: "off",
+        autocapitalize: "off",
+        "aria-label": "Main content area, start typing to enter text.",
+        class: "simple-editor",
+      },
+    },
+    extensions: [
+      StarterKit.configure({
+        horizontalRule: false,
+        link: {
+          HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer nofollow' },
+          openOnClick: false, // Prevent clicking links to open them - allows editing
+        },
+      }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Highlight.configure({ multicolor: true }),
+      Image.configure({ inline: true }),
+      Typography,
+      Superscript,
+      Subscript,
+      Placeholder.configure({
+        placeholder: "Start writing your article...",
+      }),
+      ImageUploadNode.configure({
+        accept: "image/*",
+        maxSize: 5 * 1024 * 1024, // 5MB
+        limit: 3,
+        upload: handleImageUpload,
+      }),
+    ],
+    content: "",
+    onUpdate: ({ editor }) => {
+      setHtml(editor.getHTML())
+    },
+  })
 
-  const setLink = useCallback(() => {
-    const previousUrl = editor?.getAttributes('link').href
-    const url = window.prompt('URL', previousUrl)
-    if (url === null) return
-    if (url === '') {
-      editor?.chain().focus().extendMarkRange('link').unsetLink().run()
-      return
+  // Track whether we've already loaded the initial content
+  const contentLoadedRef = useRef(false)
+
+  // Load document content from Convex (once, on initial load)
+  useEffect(() => {
+    if (editor && data?.document && !contentLoadedRef.current) {
+      // Defer to microtask to avoid flushSync inside React's commit phase
+      queueMicrotask(() => {
+        editor.commands.setContent(data.document)
+        contentLoadedRef.current = true
+      })
     }
-    editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
-  }, [editor])
+  }, [editor, data?.document])
+
+  const rect = useCursorVisibility({
+    editor,
+    overlayHeight: toolbarRef.current?.getBoundingClientRect().height ?? 0,
+  })
 
   return (
-    <div className='flex flex-col items-end w-full'>
-      <div className='flex justify-center items-center gap-3'>
-        <DeleteDocument id={id} />
-        <a href="/cms/documents">
-          <Button variant="outline">Back</Button>
-        </a>
-      </div>
-      <div className="p-4 border rounded mt-5 w-full">
-        <div className='flex pb-3 my-7'>
-          <h1 className="scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-5xl">
-            {data?.title}
-          </h1>
+    <div className="flex flex-col w-full h-full">
+      {/* Header with back button, title, save status, and submit */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-3">
+          <a href="/cms/documents">
+            <Button variant="ghost" className="gap-2">
+              <ArrowLeftIcon className="tiptap-button-icon" />
+              Back
+            </Button>
+          </a>
         </div>
-        <MenuBar editor={editor} />
-        {editor && (
-          <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
-            <button
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              className={editor.isActive('bold') ? 'border rounded bg-foreground text-background border-foreground px-2 mx-1' : 'px-2 border rounded bg-background mx-1'}
-            >bold</button>
-            <button
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              className={editor.isActive('italic') ? 'border rounded bg-foreground text-background border-foreground px-2 mx-1' : 'px-2 border rounded bg-background mx-1'}
-            >italic</button>
-            <button
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              className={editor.isActive('strike') ? 'border rounded bg-foreground text-background border-foreground px-2 mx-1' : 'px-2 border rounded bg-background mx-1'}
-            >strike</button>
-            <button onClick={setLink} className={editor.isActive('link') ? 'border rounded bg-foreground text-background border-foreground px-2 mx-1' : 'px-2 mx-1 border rounded bg-background'}>link</button>
-            <button
-              className={editor.isActive('link') ? 'border rounded bg-blue-700 text-white px-2 mx-1' : 'px-2 mx-1 border rounded bg-background'}
-              onClick={() => editor.chain().focus().unsetLink().run()}
-              disabled={!editor.isActive('link')}
-            >unlink</button>
-          </BubbleMenu>
-        )}
-        <div className="tiptap-editor">
-          <EditorContent editor={editor} />
-        </div>
-        <div className="mt-4 w-full">
-          <SubmitDocument html={html ?? ""} id={id} title={data?.title || ""} />
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {isSaving ? (
+              <>
+                <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <div className="h-2 w-2 rounded-full bg-green-500" />
+                <span>Saved</span>
+              </>
+            )}
+          </div>
+          <SubmitDocument html={html} id={id} title={data?.title || ""} />
         </div>
       </div>
+
+      {/* Document Title */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">
+          {data?.title}
+        </h1>
+      </div>
+
+      {/* Editor */}
+      <EditorContext.Provider value={{ editor }}>
+        <div className="simple-editor-wrapper flex-1 flex flex-col overflow-hidden">
+          <Toolbar
+            ref={toolbarRef}
+            style={{
+              ...(isMobile
+                ? {
+                    bottom: `calc(100% - ${height - rect.y}px)`,
+                  }
+                : {}),
+            }}
+          >
+            <ToolbarGroup>
+              <UndoRedoButton action="undo" />
+              <UndoRedoButton action="redo" />
+            </ToolbarGroup>
+
+            <ToolbarSeparator />
+
+            <ToolbarGroup>
+              <HeadingDropdownMenu modal={false} levels={[1, 2, 3]} />
+              <ListDropdownMenu
+                modal={false}
+                types={["bulletList", "orderedList", "taskList"]}
+              />
+              <BlockquoteButton />
+              <CodeBlockButton />
+            </ToolbarGroup>
+
+            <ToolbarSeparator />
+
+            <ToolbarGroup>
+              <MarkButton type="bold" />
+              <MarkButton type="italic" />
+              <MarkButton type="strike" />
+              <MarkButton type="code" />
+              <MarkButton type="underline" />
+              <LinkPopover />
+              <ColorHighlightPopover />
+            </ToolbarGroup>
+
+            <ToolbarSeparator />
+
+            <ToolbarGroup>
+              <MarkButton type="superscript" />
+              <MarkButton type="subscript" />
+            </ToolbarGroup>
+
+            <ToolbarSeparator />
+
+            <ToolbarGroup>
+              <TextAlignButton align="left" />
+              <TextAlignButton align="center" />
+              <TextAlignButton align="right" />
+              <TextAlignButton align="justify" />
+            </ToolbarGroup>
+
+            <ToolbarSeparator />
+
+            <ToolbarGroup>
+              <ImageUploadButton text="Add" />
+            </ToolbarGroup>
+
+            <Spacer />
+          </Toolbar>
+
+          <EditorContent
+            editor={editor}
+            role="presentation"
+            className="simple-editor-content flex-1 overflow-y-auto"
+          />
+        </div>
+      </EditorContext.Provider>
     </div>
   )
 }

@@ -47,56 +47,56 @@
 
 ## Color System (CSS Variables Only)
 
-**IMPORTANT**: The actual color values below are placeholders. They will be replaced when final brand colors are provided. The structure and variable names must NOT change.
+**FINAL COLORS**: Sage Green & Terracotta theme implemented. These are the production color values for the blog CMS. The structure and variable names must NOT change.
 
-### Light Mode
+### Light Mode - Sage Green & Terracotta Theme
 ```css
-:root {
-  --background: 0 0% 98%;         /* #FAFAFA — paper white */
-  --foreground: 240 10% 4%;       /* #09090B — near black */
-  --card: 0 0% 100%;              /* #FFFFFF — pure white cards */
-  --card-foreground: 240 10% 4%;  /* #09090B */
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 4%;
-  --primary: 240 6% 10%;          /* #18181B — dark primary */
-  --primary-foreground: 0 0% 98%;
-  --secondary: 240 5% 96%;        /* #F4F4F5 */
-  --secondary-foreground: 240 6% 10%;
-  --muted: 240 5% 96%;
-  --muted-foreground: 240 4% 46%; /* #71717A */
-  --accent: 330 81% 60%;          /* #EC4899 — accent (CTA) */
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 5% 90%;           /* #E4E4E7 */
-  --input: 240 5% 90%;
-  --ring: 330 81% 60%;            /* Matches accent */
+@theme {
+  --color-background: hsl(45 25% 96%);        /* #F5F1E8 — warm cream */
+  --color-foreground: hsl(25 15% 15%);        /* #2C2416 — soft charcoal */
+  --color-card: hsl(45 25% 98%);              /* #FAF7F0 — lighter cream */
+  --color-card-foreground: hsl(25 15% 15%);
+  --color-popover: hsl(45 25% 98%);
+  --color-popover-foreground: hsl(25 15% 15%);
+  --color-primary: hsl(180 15% 35%);          /* #4A6B5A — sage green */
+  --color-primary-foreground: hsl(45 25% 96%);
+  --color-secondary: hsl(45 20% 92%);         /* #E8EAE5 — light sage */
+  --color-secondary-foreground: hsl(180 15% 35%);
+  --color-muted: hsl(45 15% 88%);             /* #DADCD5 — subtle sage */
+  --color-muted-foreground: hsl(25 10% 45%);  /* #6B5D4F — medium charcoal */
+  --color-accent: hsl(15 65% 65%);            /* #C67E5B — warm terracotta */
+  --color-accent-foreground: hsl(45 25% 96%);
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(45 25% 96%);
+  --color-border: hsl(45 15% 85%);            /* #E0E5DD — soft borders */
+  --color-input: hsl(45 25% 96%);
+  --color-ring: hsl(180 15% 35%);             /* Matches primary */
   --radius: 0.5rem;
 }
 ```
 
-### Dark Mode
+### Dark Mode - Sage Green & Terracotta Theme
 ```css
 .dark {
-  --background: 240 10% 4%;       /* #09090B */
-  --foreground: 0 0% 98%;         /* #FAFAFA */
-  --card: 240 6% 10%;             /* #18181B */
-  --card-foreground: 0 0% 98%;
-  --popover: 240 6% 10%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 6% 10%;
-  --secondary: 240 4% 16%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 4% 16%;
-  --muted-foreground: 240 5% 65%;
-  --accent: 330 81% 60%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 63% 31%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 4% 16%;
-  --input: 240 4% 16%;
-  --ring: 330 81% 60%;
+  --color-background: hsl(25 15% 8%);         /* #1A1612 — dark charcoal */
+  --color-foreground: hsl(45 25% 92%);        /* #F5F1E8 — light cream */
+  --color-card: hsl(25 15% 12%);              /* #2C2416 — darker charcoal */
+  --color-card-foreground: hsl(45 25% 92%);
+  --color-popover: hsl(25 15% 12%);
+  --color-popover-foreground: hsl(45 25% 92%);
+  --color-primary: hsl(170 20% 60%);          /* #7BA89A — lighter sage */
+  --color-primary-foreground: hsl(25 15% 8%);
+  --color-secondary: hsl(25 15% 18%);         /* #3A342C — medium charcoal */
+  --color-secondary-foreground: hsl(170 20% 60%);
+  --color-muted: hsl(25 15% 22%);             /* #4A433A — subtle dark */
+  --color-muted-foreground: hsl(45 15% 65%);  /* #B5ACA0 — muted light */
+  --color-accent: hsl(10 55% 70%);            /* #D8997B — muted terracotta */
+  --color-accent-foreground: hsl(25 15% 8%);
+  --color-destructive: hsl(0 63% 31%);
+  --color-destructive-foreground: hsl(45 25% 92%);
+  --color-border: hsl(25 15% 25%);            /* #5A5247 — dark borders */
+  --color-input: hsl(25 15% 18%);
+  --color-ring: hsl(170 20% 60%);             /* Matches primary */
 }
 ```
 
