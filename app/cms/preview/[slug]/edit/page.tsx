@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { EditorContent, EditorContext, useEditor } from "@tiptap/react"
-import { useQuery } from "convex/react"
+import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useParams } from "next/navigation"
 
@@ -63,12 +63,35 @@ export default function ArticleEditor() {
   const params = useParams()
   const slug = params?.slug as string
   const data = useQuery(api.blogs.getArticleBySlug, { slug })
+  const updateArticle = useMutation(api.blogs.updateArticle)
 
   const isMobile = useIsBreakpoint()
   const { height } = useWindowSize()
   const toolbarRef = useRef<HTMLDivElement>(null)
   const [html, setHtml] = useState("")
   const [isSaving, setIsSaving] = useState(false)
+
+  // Auto-save function
+  const saveToConvex = useCallback(async (content: string) => {
+    if (!content || !slug) return
+    setIsSaving(true)
+    try {
+      await updateArticle({ slug, blogHtml: content })
+    } catch {
+      // Auto-save failed silently — user sees the indicator won't flip to "Saved"
+    } finally {
+      setIsSaving(false)
+    }
+  }, [slug, updateArticle])
+
+  // Debounced auto-save effect
+  useEffect(() => {
+    if (!html) return
+    const timer = setTimeout(() => {
+      saveToConvex(html)
+    }, 5000) // Save after 5 seconds of inactivity
+    return () => clearTimeout(timer)
+  }, [html, saveToConvex])
 
   const editor = useEditor({
     immediatelyRender: false,

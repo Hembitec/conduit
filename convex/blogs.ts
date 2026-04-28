@@ -17,6 +17,7 @@ export const storeArticle = mutation({
         categoryId: v.optional(v.id("categories")),
         authorId: v.optional(v.id("authors")),
         keywords: v.optional(v.array(v.string())),
+        tagIds: v.optional(v.array(v.id("tags"))),
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
@@ -46,6 +47,38 @@ export const storeArticle = mutation({
     },
 });
 
+export const syncFromDocument = mutation({
+    args: { slug: v.string() },
+    handler: async (ctx, args) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) throw new Error("Unauthorized");
+
+        const blog = await ctx.db
+            .query("blogs")
+            .withIndex("by_user_and_slug", (q) =>
+                q.eq("userId", userId).eq("slug", args.slug)
+            )
+            .unique();
+        if (!blog) throw new ConvexError("Article not found");
+        if (!blog.sourceDocumentId) {
+            throw new ConvexError("This article has no linked document to sync from");
+        }
+
+        const doc = await ctx.db.get(blog.sourceDocumentId);
+        if (!doc || doc.userId !== userId) {
+            throw new ConvexError("Source document not found or access denied");
+        }
+
+        const wordCount = doc.document.replace(/<[^>]*>/g, "").split(/\s+/).length;
+        const readingTime = Math.ceil(wordCount / 200);
+
+        await ctx.db.patch(blog._id, {
+            blogHtml: doc.document,
+            readingTime,
+        });
+    },
+});
+
 export const updateArticle = mutation({
     args: {
         slug: v.string(),
@@ -58,6 +91,7 @@ export const updateArticle = mutation({
         categoryId: v.optional(v.id("categories")),
         authorId: v.optional(v.id("authors")),
         keywords: v.optional(v.array(v.string())),
+        tagIds: v.optional(v.array(v.id("tags"))),
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
@@ -195,7 +229,11 @@ export const getArticleBySlug = query({
             ? await ctx.db.get(blog.categoryId)
             : null;
 
-        return { ...blog, author: author ?? null, category: category ?? null };
+        const tags = blog.tagIds && blog.tagIds.length > 0
+            ? await Promise.all(blog.tagIds.map(id => ctx.db.get(id)))
+            : [];
+
+        return { ...blog, author: author ?? null, category: category ?? null, tags: tags.filter(t => t !== null) };
     },
 });
 
@@ -217,7 +255,21 @@ export const readPublicArticle = query({
             ? await ctx.db.get(blog.categoryId)
             : null;
 
-        return { ...blog, author: author ?? null, category: category ?? null };
+        const tags = blog.tagIds && blog.tagIds.length > 0
+            ? await Promise.all(blog.tagIds.map(id => ctx.db.get(id)))
+            : [];
+
+        return { 
+            ...blog, 
+            author: author ? { 
+                name: author.name, 
+                profileImg: author.profileImg,
+                instagram: author.instagram,
+                twitter: author.twitter
+            } : null, 
+            category: category ?? null,
+            tags: tags.filter(t => t !== null)
+        };
     },
 });
 
@@ -279,4 +331,64 @@ export const getArticleSlugsByUser = query({
             .collect();
         return blogs.filter((b) => b.published).map((b) => ({ slug: b.slug }));
     },
+});
+
+// API: look up a single published article by slug + owner.
+// Used by the comments API route to verify the article belongs to the requesting key's account.
+export const getArticleBySlugAndUser = query({
+    args: { slug: v.string(), userId: v.id("users") },
+    handler: async (ctx, args) => {
+        const blog = await ctx.db
+            .query("blogs")
+            .withIndex("by_user_and_slug", (q) =>
+                q.eq("userId", args.userId).eq("slug", args.slug)
+            )
+            .unique();
+        if (!blog || !blog.published) return null;
+        return blog;
+    },
+});
+
+export const getRelatedArticles = query({
+    args: { 
+        blogId: v.id("blogs"),
+        tagIds: v.array(v.id("tags")) 
+    },
+    handler: async (ctx, args) => {
+        if (args.tagIds.length === 0) return [];
+
+        const sourceBlog = await ctx.db.get(args.blogId);
+        if (!sourceBlog) return [];
+
+        const blogs = await ctx.db
+            .query("blogs")
+            .withIndex("by_user", (q) => q.eq("userId", sourceBlog.userId))
+            .collect();
+
+        const related = blogs
+            .filter(b => b._id !== args.blogId && b.published)
+            .map(b => {
+                const overlap = (b.tagIds || []).filter(tid => args.tagIds.includes(tid)).length;
+                return { blog: b, overlap };
+            })
+            .filter(x => x.overlap > 0)
+            .sort((a, b) => b.overlap - a.overlap)
+            .slice(0, 3)
+            .map(x => x.blog);
+
+        return await Promise.all(related.map(async (blog) => {
+            const author = blog.authorId ? await ctx.db.get(blog.authorId) : null;
+            const category = blog.categoryId ? await ctx.db.get(blog.categoryId) : null;
+            return { 
+                ...blog, 
+                author: author ? { 
+                    name: author.name, 
+                    profileImg: author.profileImg,
+                    instagram: author.instagram,
+                    twitter: author.twitter
+                } : null, 
+                category: category ?? null 
+            };
+        }));
+    }
 });

@@ -55,6 +55,7 @@ export default defineSchema({
     shareable: v.boolean(),
     viewCount: v.float64(),
     readingTime: v.optional(v.float64()),
+    tagIds: v.optional(v.array(v.id("tags"))),
     userId: v.id("users"),
   })
     .index("by_user", ["userId"])
@@ -69,11 +70,26 @@ export default defineSchema({
     authorEmail: v.string(),
     content: v.string(),
     approved: v.boolean(),
-  }).index("by_blog", ["blogId"]),
+  })
+    .index("by_blog", ["blogId"])
+    .index("by_blog_and_approved", ["blogId", "approved"]),
 
   // Page view tracking
   pageViews: defineTable({
     blogId: v.id("blogs"),
     timestamp: v.float64(),
   }).index("by_blog", ["blogId"]),
+
+  // Newsletter Subscribers
+  subscribers: defineTable({
+    email: v.string(),
+    blogUserId: v.id("users"), // the owner of the blog
+  }).index("by_user", ["blogUserId"]),
+
+  // Blog Tags
+  tags: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    userId: v.id("users"),
+  }).index("by_user", ["userId"]),
 });

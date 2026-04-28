@@ -524,3 +524,56 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
 
 - **Next step**: Run `npm run build` to verify, then commit everything with the provided commit message
 
+### 2026-04-25 — Settings UI, Analytics & Public Comments (Pre-SEO)
+
+- **What was done**: Added a ThemeProvider to enable system-wide dark mode support. Created the Appearance section in the settings page to toggle Light/Dark/System themes. Wired the analytics dashboard to actual Convex queries, displaying real page views, published count, and a dynamic 30-day view chart instead of placeholders. Created the `ArticleComments` client component and integrated it into the public article page to allow visitors to submit comments (which await approval in the CMS).
+- **Key decisions**:
+  - `next-themes` used with `attribute="class"` for Tailwind compatibility.
+  - The `ArticleComments` component handles its own client-side data fetching and form submission while the parent `page.tsx` remains a Server Component.
+- **Issues encountered & fixed**:
+  - `npm` wasn't available in the secure sandbox environment when trying to run the build verification, but the dev server was already running and verified successfully.
+- **Files changed**:
+  - `app/provider.tsx`, `app/cms/settings/(components)/UserInfo.tsx`
+  - `app/cms/analytics/page.tsx`
+  - `components/ArticleComments.tsx` (new), `app/article/public/[id]/page.tsx`
+- **Next step**: Start Phase 6 (SEO Features) — migrate URL to `/blog/[slug]`, add `generateMetadata()`, sitemap, and RSS feed.
+
+### 2026-04-25 — Deep Codebase Audit & Cleanup Sweep
+
+- **What was done**: Exhaustive audit of every file, route, backend function, and schema. Compared actual codebase state against GOALS.md, ARCHITECTURE.md, and PHASE-TRACKER.md. Identified 7 tasks already completed but unchecked. Executed full cleanup sweep.
+- **Key decisions**:
+  - File size splits (OnboardingModal.tsx 572 lines, publish/page.tsx 553 lines) deferred — user said "we can leave this alone not much"
+  - Hardcoded Tailwind semantic colors (green-500 for success, yellow-500 for warning) acknowledged but deprioritized — could define `--color-success` later
+- **Cleanup executed**:
+  1. DELETED `app/cms/(components)/ArticleCard.tsx` — dead, replaced by EntityCard
+  2. DELETED `components/ModeToggle.tsx` — not imported anywhere, dark mode is in Settings
+  3. DELETED `components/theme-provider.tsx` — not imported, ThemeProvider is from next-themes in provider.tsx
+  4. DELETED empty `utils/` directory
+  5. REMOVED commented-out code from `app/page.tsx` (MarketingCards + LogoAnimation imports)
+  6. FIXED `package.json` name from "heytorontofoodie" → "conduit-cms"
+  7. UPDATED `ARCHITECTURE.md` schema to match actual `convex/schema.ts` (10+ field mismatches fixed)
+  8. UPDATED `PHASE-TRACKER.md` — checked off 7 tasks, updated statuses, corrected summary table (62% → 72%)
+- **Tasks newly confirmed as done**:
+  - 7.1 Page view tracking (TrackPageView component)
+  - 7.2 View count per article (trackPageView mutation increments viewCount)
+  - 7.3 Reading time auto-calculated (storeArticle calculates readingTime)
+  - 7.5 Per-article view count on preview page
+  - 6.8 metaDescription field in publish form (with 160-char counter)
+  - 8.9 Author bio section on public article page
+- **Remaining known issues** (logged, not blocking):
+  - 4 raw `<img>` tags should be `<Image>` (publish preview, author pages, old ArticleCard)
+  - Inconsistent error handling: some files use `ConvexError`, others use raw `throw new Error`
+  - Dashboard search input is decorative (no filtering logic)
+  - No public `/blog` listing page exists yet
+  - `by_slug` index is not user-scoped (potential slug collision across users)
+- **Files changed**:
+  - `app/cms/(components)/ArticleCard.tsx` — DELETED
+  - `components/ModeToggle.tsx` — DELETED
+  - `components/theme-provider.tsx` — DELETED
+  - `utils/` directory — DELETED
+  - `app/page.tsx` — removed commented-out code
+  - `package.json` — name fixed
+  - `ARCHITECTURE.md` — schema section rewritten to match reality
+  - `PHASE-TRACKER.md` — 7 tasks checked off, statuses updated
+  - `AGENTS.md` — session notes added
+- **Next step**: Start Phase 6 (SEO) — create `/blog/[slug]` route with `generateMetadata()`, sitemap, robots.txt, RSS feed.

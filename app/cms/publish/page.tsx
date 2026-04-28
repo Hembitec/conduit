@@ -40,6 +40,7 @@ import {
   Image as ImageIcon, 
   User, 
   Tag, 
+  Tags,
   Search, 
   FileText,
   Sparkles,
@@ -69,6 +70,7 @@ const FormSchema = z.object({
   author: z.string().min(1, "Please select an author"),
   category: z.string().min(1, "Please select a category"),
   article: z.string().min(1, "Please select a document to publish"),
+  tagIds: z.array(z.string()).optional(),
 })
 
 type PublishFormData = z.infer<typeof FormSchema>
@@ -90,12 +92,14 @@ export default function Publish() {
       author: "",
       category: "",
       article: "",
+      tagIds: [],
     },
   })
 
   const documentData = useQuery(api.documents.getAllDocuments)
   const authorsData = useQuery(api.authors.getAllAuthors)
   const categoryData = useQuery(api.categories.getAllCategories)
+  const tagsData = useQuery(api.tags.getTags)
 
   // Auto-generate slug from title
   const titleValue = form.watch("title")
@@ -129,6 +133,7 @@ export default function Publish() {
         sourceDocumentId: data.article as Id<"documents">,
         authorId: data.author as Id<"authors">,
         categoryId: data.category as Id<"categories">,
+        tagIds: (data.tagIds || []) as Id<"tags">[],
         keywords: data.keywords
           ? data.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
           : [],
@@ -399,6 +404,67 @@ export default function Publish() {
                         <FormDescription>
                           How should this be organized?
                         </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                {/* Tags */}
+                <div className="mt-6">
+                  <FormField
+                    control={form.control}
+                    name="tagIds"
+                    render={() => (
+                      <FormItem>
+                        <div className="mb-4">
+                          <FormLabel className="text-base">Tags</FormLabel>
+                          <FormDescription>
+                            Select the tags that apply to this article.
+                          </FormDescription>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {tagsData === undefined ? (
+                            <div className="text-sm text-muted-foreground">Loading tags...</div>
+                          ) : tagsData.length === 0 ? (
+                            <div className="text-sm text-muted-foreground">No tags available. Create some in the Tags dashboard.</div>
+                          ) : tagsData.map((tag) => (
+                            <FormField
+                              key={tag._id}
+                              control={form.control}
+                              name="tagIds"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem
+                                    key={tag._id}
+                                    className="flex flex-row items-start space-x-3 space-y-0"
+                                  >
+                                    <FormControl>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const current = field.value || []
+                                          const updated = current.includes(tag._id)
+                                            ? current.filter((id) => id !== tag._id)
+                                            : [...current, tag._id]
+                                          field.onChange(updated)
+                                        }}
+                                        className={cn(
+                                          "px-3 py-1.5 text-sm border rounded-full transition-colors cursor-pointer",
+                                          (field.value || []).includes(tag._id)
+                                            ? "bg-primary text-primary-foreground border-primary"
+                                            : "bg-background text-muted-foreground border-muted-foreground/30 hover:border-primary/50"
+                                        )}
+                                      >
+                                        {tag.name}
+                                      </button>
+                                    </FormControl>
+                                  </FormItem>
+                                )
+                              }}
+                            />
+                          ))}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}

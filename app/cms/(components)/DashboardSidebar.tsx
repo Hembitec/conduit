@@ -30,7 +30,9 @@ import {
   Pen,
   Settings,
   Tag,
+  Tags,
   User,
+  Users,
   type LucideIcon,
 } from "lucide-react"
 import Link from "next/link"
@@ -66,6 +68,8 @@ const navSections: NavSection[] = [
     items: [
       { label: "Create Author", href: "/cms/author", icon: User },
       { label: "Create Category", href: "/cms/category", icon: Tag },
+      { label: "Tags", href: "/cms/tags", icon: Tags },
+      { label: "Subscribers", href: "/cms/subscribers", icon: Users },
     ],
   },
   {
@@ -73,6 +77,7 @@ const navSections: NavSection[] = [
     items: [
       { label: "Comments", href: "/cms/comments", icon: MessageSquare, badge: 0 },
       { label: "Analytics", href: "/cms/analytics", icon: BarChart3 },
+      { label: "API Docs", href: "/cms/api", icon: FileText },
     ],
   },
 ]

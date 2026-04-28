@@ -146,7 +146,7 @@ export default function DocumentEditor({ params }: { params: Promise<{ id: strin
     if (!html) return
     const timer = setTimeout(() => {
       saveToConvex(html)
-    }, 2000) // Save after 2 seconds of inactivity
+    }, 5000) // Save after 5 seconds of inactivity
     return () => clearTimeout(timer)
   }, [html, saveToConvex])
 

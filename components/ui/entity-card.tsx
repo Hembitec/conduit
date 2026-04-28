@@ -185,6 +185,17 @@ function DocumentCard({
         </span>
 
         <div className="flex items-center gap-1">
+          <Link href={`/cms/documents/${document._id}/preview`}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 px-3 text-xs gap-1.5"
+              aria-label="Preview document"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Preview</span>
+            </Button>
+          </Link>
           <Link href={`/cms/documents/${document._id}`}>
             <Button
               size="sm"

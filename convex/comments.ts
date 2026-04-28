@@ -12,6 +12,9 @@ export const createComment = mutation({
         content: v.string(),
     },
     handler: async (ctx, args) => {
+        if (args.content.length > 5000) throw new Error("Comment is too long");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(args.authorEmail)) throw new Error("Invalid email address");
+
         const blog = await ctx.db.get(args.blogId);
         if (!blog || !blog.published) throw new Error("Article not found");
 
@@ -59,30 +62,17 @@ export const deleteComment = mutation({
 
 // ─── Comment Queries ─────────────────────────────────────────────
 
-export const getCommentsByBlog = query({
-    args: { blogId: v.id("blogs") },
-    handler: async (ctx, args) => {
-        return await ctx.db
-            .query("comments")
-            .withIndex("by_blog", (q) => q.eq("blogId", args.blogId))
-            .order("desc")
-            .collect();
-    },
-});
-
 export const getAllComments = query({
     args: {},
     handler: async (ctx) => {
         const userId = await getAuthUserId(ctx);
         if (!userId) return [];
 
-        // Get user's blogs (indexed)
         const userBlogs = await ctx.db
             .query("blogs")
             .withIndex("by_user", (q) => q.eq("userId", userId))
             .collect();
 
-        // Query comments per blog (using index each time — no full table scan)
         const commentGroups = await Promise.all(
             userBlogs.map(async (blog) => {
                 const comments = await ctx.db
@@ -98,5 +88,19 @@ export const getAllComments = query({
         );
 
         return commentGroups.flat();
+    },
+});
+
+// Public query — approved comments only, no auth required.
+export const getApprovedCommentsByBlog = query({
+    args: { blogId: v.id("blogs") },
+    handler: async (ctx, args) => {
+        return await ctx.db
+            .query("comments")
+            .withIndex("by_blog_and_approved", (q) => 
+                q.eq("blogId", args.blogId).eq("approved", true)
+            )
+            .order("desc")
+            .collect();
     },
 });

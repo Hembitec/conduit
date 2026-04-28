@@ -3,7 +3,7 @@ import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server"
 import { api } from "@/convex/_generated/api"
 import { Document } from "@/types"
 import CreateDocument from "../(components)/CreateDocument"
-import Documents from "./(components)/Documents"
+import { DocumentList } from "./(components)/DocumentList"
 import { EmptyState } from "@/components/EmptyState"
 
 export default async function DocumentsPage() {
@@ -27,20 +27,7 @@ export default async function DocumentsPage() {
       </div>
 
       {/* Documents Grid */}
-      {documents.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-          {documents.map((doc) => (
-            <Documents key={doc._id} document={doc} />
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          title="Start your first document"
-          description="Create a document to begin writing. Your drafts auto-save as you type."
-          actionLabel="New Document"
-          actionHref="/cms/documents"
-        />
-      )}
+      <DocumentList initialDocuments={documents} />
     </main>
   )
 }

@@ -4,15 +4,26 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Eye, EyeOff, RefreshCw, Copy, Check, HelpCircle, Key, User, ExternalLink } from 'lucide-react'
+import { Eye, EyeOff, RefreshCw, Copy, Check, HelpCircle, Key, User, ExternalLink, Sun, Moon, Monitor } from 'lucide-react'
 import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { toast } from 'sonner'
 import { ConvexError } from 'convex/values'
 import { useOnboarding } from '@/components/OnboardingContext'
+import { useTheme } from 'next-themes'
+import { cn } from '@/lib/utils'
+
+type ThemeOption = 'light' | 'dark' | 'system'
+
+const themeOptions: { value: ThemeOption; label: string; icon: React.ElementType }[] = [
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon },
+  { value: 'system', label: 'System', icon: Monitor },
+]
 
 export default function UserInfo() {
+  const { theme, setTheme } = useTheme()
   const [showAPI, setShowAPI] = useState(false)
   const [copied, setCopied] = useState(false)
   const [generating, setGenerating] = useState(false)
@@ -68,6 +79,41 @@ export default function UserInfo() {
               <p className="text-xs text-muted-foreground">
                 Your account email is managed by your authentication provider
               </p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Appearance Section */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <Sun className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">Appearance</h2>
+        </div>
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base">Theme</CardTitle>
+            <CardDescription>
+              Choose how Conduit CMS looks for you.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              {themeOptions.map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  onClick={() => setTheme(value)}
+                  className={cn(
+                    "flex flex-1 flex-col items-center gap-2 rounded-lg border-2 p-4 text-sm font-medium transition-all cursor-pointer",
+                    theme === value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:border-primary/40 hover:bg-muted text-muted-foreground"
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  {label}
+                </button>
+              ))}
             </div>
           </CardContent>
         </Card>

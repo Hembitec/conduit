@@ -125,80 +125,83 @@ public/
 ```typescript
 // convex/schema.ts
 import { defineSchema, defineTable } from "convex/server";
+import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  users: defineTable({
-    email: v.string(),
+  // Auth tables managed by @convex-dev/auth (includes users, sessions, accounts etc.)
+  ...authTables,
+
+  // Extended user profile (separate from the auth users table)
+  userProfiles: defineTable({
+    userId: v.id("users"),
     name: v.optional(v.string()),
-    image: v.optional(v.id("_storage")),
-  }).index("by_email", ["email"]),
+    image: v.optional(v.string()),
+    apiKey: v.optional(v.string()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_api_key", ["apiKey"]),
 
+  // Draft documents (editor workspace)
   documents: defineTable({
-    userId: v.id("users"),
     title: v.string(),
-    content: v.string(),                  // TipTap HTML output
-    createdAt: v.number(),
-    updatedAt: v.number(),
+    document: v.string(),                // TipTap HTML content
+    userId: v.id("users"),
   }).index("by_user", ["userId"]),
 
+  // Blog categories
   categories: defineTable({
-    userId: v.id("users"),
     name: v.string(),
+    userId: v.id("users"),
   }).index("by_user", ["userId"]),
 
+  // Blog authors
   authors: defineTable({
-    userId: v.id("users"),
     name: v.string(),
-    profileImage: v.optional(v.id("_storage")),
+    profileImg: v.optional(v.string()),   // R2 public URL
     instagram: v.optional(v.string()),
     twitter: v.optional(v.string()),
+    userId: v.id("users"),
   }).index("by_user", ["userId"]),
 
+  // Published blog articles
   blogs: defineTable({
-    userId: v.id("users"),
     title: v.string(),
     subtitle: v.optional(v.string()),
     slug: v.string(),
-    content: v.string(),                  // TipTap HTML
-    image: v.optional(v.id("_storage")),
+    blogHtml: v.string(),                 // TipTap HTML
+    sourceDocumentId: v.optional(v.id("documents")),
+    image: v.optional(v.string()),        // R2 public URL
     imageAlt: v.optional(v.string()),
-    categoryId: v.id("categories"),
-    authorId: v.id("authors"),
-    keywords: v.array(v.string()),
+    metaDescription: v.optional(v.string()),
+    categoryId: v.optional(v.id("categories")),
+    authorId: v.optional(v.id("authors")),
+    keywords: v.optional(v.array(v.string())),
     published: v.boolean(),
     shareable: v.boolean(),
-    metaDescription: v.optional(v.string()),
-    readingTimeMinutes: v.optional(v.number()),
-    viewCount: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
+    viewCount: v.float64(),
+    readingTime: v.optional(v.float64()),
+    userId: v.id("users"),
   })
     .index("by_user", ["userId"])
     .index("by_slug", ["slug"])
-    .index("by_user_and_published", ["userId", "published"])
-    .searchIndex("search_content", {
-      searchField: "title",
-      filterFields: ["userId", "published"],
-    }),
+    .index("by_user_and_slug", ["userId", "slug"])
+    .index("by_published", ["published"]),
 
+  // Comments on published articles
   comments: defineTable({
     blogId: v.id("blogs"),
     authorName: v.string(),
     authorEmail: v.string(),
     content: v.string(),
     approved: v.boolean(),
-    createdAt: v.number(),
   }).index("by_blog", ["blogId"]),
 
+  // Page view tracking
   pageViews: defineTable({
     blogId: v.id("blogs"),
-    timestamp: v.number(),
-    referrer: v.optional(v.string()),
-    userAgent: v.optional(v.string()),
-  })
-    .index("by_blog", ["blogId"])
-    .index("by_timestamp", ["timestamp"]),
+    timestamp: v.float64(),
+  }).index("by_blog", ["blogId"]),
 });
 ```
 

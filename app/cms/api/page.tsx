@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Copy, Check, Globe, FileJson, Link as LinkIcon, AlertTriangle, BookOpen } from "lucide-react"
+import { Copy, Check, Globe, FileJson, Link as LinkIcon, AlertTriangle, BookOpen, Mail } from "lucide-react"
 import { toast } from "sonner"
 
 interface ApiEndpointProps {
@@ -217,6 +217,109 @@ const { data } = await response.json();`}
     "author": { "name": "John", "profileImg": "..." },
     "category": { "name": "Tech" }
   }
+}`}
+            />
+          </div>
+        </div>
+
+        {/* Comments Endpoints */}
+        <div>
+          <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
+            <BookOpen className="h-5 w-5 text-primary" />
+            Comments
+          </h2>
+          <div className="space-y-4">
+            <ApiEndpoint
+              method="GET"
+              title="Get Approved Comments"
+              description="Returns all approved (moderated) comments for a specific article. Requires API key."
+              endpoint="/api/blog/[slug]/comments"
+              code={`const response = await fetch(
+  'https://your-domain.com/api/blog/my-article-slug/comments',
+  {
+    headers: {
+      'X-Auth-Key': 'YOUR_API_KEY',
+    },
+  }
+);
+const { data } = await response.json();`}
+              response={`// 200 OK
+{
+  "status": 200,
+  "message": "success",
+  "data": [
+    {
+      "_id": "...",
+      "authorName": "Jane Smith",
+      "content": "Great article!",
+      "_creationTime": 1714000000000
+    }
+  ]
+}`}
+            />
+            <ApiEndpoint
+              method="POST"
+              title="Submit a Comment"
+              description="Submit a new comment on any published article. No API key needed — open to all readers. Comments appear after moderation."
+              endpoint="/api/blog/[slug]/comments"
+              code={`const response = await fetch(
+  'https://your-domain.com/api/blog/my-article-slug/comments',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      authorName: 'Jane Smith',
+      authorEmail: 'jane@example.com',
+      content: 'Great article!',
+    }),
+  }
+);
+const result = await response.json();`}
+              response={`// 201 Created
+{
+  "status": 201,
+  "message": "Comment submitted. It will appear after moderation."
+}`}
+            />
+          </div>
+        </div>
+
+        {/* Subscribers Endpoints */}
+        <div>
+          <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
+            <Mail className="h-5 w-5 text-primary" />
+            Subscribers
+          </h2>
+          <div className="space-y-4">
+            <ApiEndpoint
+              method="POST"
+              title="Add a Newsletter Subscriber"
+              description="Add a new email subscriber to your newsletter list. This allows you to collect emails from any other website (e.g., a landing page, external blog, or opt-in form) and have them sync directly to your CMS Subscribers dashboard. Requires your API key."
+              endpoint="/api/subscribers"
+              code={`const response = await fetch(
+  'https://your-domain.com/api/subscribers',
+  {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-Auth-Key': 'YOUR_API_KEY' // Required: Identifies your account
+    },
+    body: JSON.stringify({
+      email: 'reader@example.com'
+    }),
+  }
+);
+const result = await response.json();`}
+              response={`// 200 OK
+{
+  "status": 200,
+  "message": "Successfully subscribed"
+}
+
+// 400 Bad Request (If email is invalid or already subscribed)
+{
+  "status": 400,
+  "message": "You are already subscribed!"
 }`}
             />
           </div>

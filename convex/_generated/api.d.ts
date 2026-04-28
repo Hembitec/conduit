@@ -16,6 +16,8 @@ import type * as categories from "../categories.js";
 import type * as comments from "../comments.js";
 import type * as documents from "../documents.js";
 import type * as http from "../http.js";
+import type * as subscribers from "../subscribers.js";
+import type * as tags from "../tags.js";
 import type * as users from "../users.js";
 
 import type {
@@ -33,6 +35,8 @@ declare const fullApi: ApiFromModules<{
   comments: typeof comments;
   documents: typeof documents;
   http: typeof http;
+  subscribers: typeof subscribers;
+  tags: typeof tags;
   users: typeof users;
 }>;
 

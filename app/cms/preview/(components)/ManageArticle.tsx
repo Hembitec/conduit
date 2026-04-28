@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery } from "convex/react"
-import { Clipboard, Edit, Share, Trash2, Globe, Lock, Check } from 'lucide-react'
+import { Clipboard, Edit, Share, Trash2, Globe, Lock, Check, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,11 +36,13 @@ export default function ManageArticle({ params }: {
 }) {
   const [copied, setCopied] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
   const router = useRouter()
 
   const actDeleteBlog = useMutation(api.blogs.deleteBlog)
   const actStatusBlog = useMutation(api.blogs.statusBlog)
   const actShareArticle = useMutation(api.blogs.shareArticle)
+  const actSyncFromDocument = useMutation(api.blogs.syncFromDocument)
 
   const data = useQuery(api.blogs.getArticleBySlug, { slug: params?.slug })
   const isPending = data === undefined
@@ -62,7 +64,7 @@ export default function ManageArticle({ params }: {
   }
 
   const handleCopyUrl = () => {
-    const url = `${process.env.NEXT_PUBLIC_FRONTEND_URL}/article/public/${data?.slug}`
+    const url = `${process.env.NEXT_PUBLIC_FRONTEND_URL}/blog/${data?.slug}`
     navigator.clipboard.writeText(url)
     setCopied(true)
     toast.success("URL copied to clipboard")
@@ -87,6 +89,20 @@ export default function ManageArticle({ params }: {
     } catch (error: unknown) {
       const message = error instanceof ConvexError ? (error.data as string) : "Failed to update status"
       toast.error(message)
+    }
+  }
+
+  const handleSync = async () => {
+    setIsSyncing(true)
+    try {
+      await actSyncFromDocument({ slug: params?.slug })
+      toast.success("Article synced with latest document content")
+      router.refresh()
+    } catch (error: unknown) {
+      const message = error instanceof ConvexError ? (error.data as string) : "Failed to sync from document"
+      toast.error(message)
+    } finally {
+      setIsSyncing(false)
     }
   }
 
@@ -145,7 +161,7 @@ export default function ManageArticle({ params }: {
                 <Label className="text-xs text-muted-foreground">Share Link</Label>
                 <div className="flex gap-2 mt-2">
                   <Input 
-                    value={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/article/public/${data?.slug}`}
+                    value={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/blog/${data?.slug}`}
                     readOnly
                     className="text-xs"
                   />
@@ -167,6 +183,20 @@ export default function ManageArticle({ params }: {
           </PopoverContent>
         )}
       </Popover>
+
+      {/* Sync from Document */}
+      {data?.sourceDocumentId && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-2"
+          onClick={handleSync}
+          disabled={isSyncing}
+        >
+          <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync from Doc'}</span>
+        </Button>
+      )}
 
       {/* Edit Button */}
       <Link href={`/cms/preview/${params?.slug}/edit`}>

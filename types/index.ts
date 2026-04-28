@@ -79,11 +79,15 @@ export interface PublicArticle {
   blogHtml: string;
   image?: string;
   imageAlt?: string;
+  metaDescription?: string;
   keywords?: string[];
   published: boolean;
   shareable: boolean;
   viewCount: number;
   readingTime?: number;
+  userId: Id<"users">;
+  tagIds?: Id<"tags">[];
+  tags?: Array<{ _id: Id<"tags">; name: string; slug: string }>;
   author?: PublicAuthor;
   category?: PublicCategory;
   _creationTime: number;
