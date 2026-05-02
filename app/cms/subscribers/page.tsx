@@ -61,6 +61,7 @@ export default function SubscribersPage() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">

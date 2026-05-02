@@ -64,7 +64,7 @@ export default function ManageArticle({ params }: {
   }
 
   const handleCopyUrl = () => {
-    const url = `${process.env.NEXT_PUBLIC_FRONTEND_URL}/blog/${data?.slug}`
+    const url = `${process.env.NEXT_PUBLIC_APP_URL}/blog/${data?.slug}`
     navigator.clipboard.writeText(url)
     setCopied(true)
     toast.success("URL copied to clipboard")
@@ -161,7 +161,7 @@ export default function ManageArticle({ params }: {
                 <Label className="text-xs text-muted-foreground">Share Link</Label>
                 <div className="flex gap-2 mt-2">
                   <Input 
-                    value={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/blog/${data?.slug}`}
+                    value={`${process.env.NEXT_PUBLIC_APP_URL}/blog/${data?.slug}`}
                     readOnly
                     className="text-xs"
                   />

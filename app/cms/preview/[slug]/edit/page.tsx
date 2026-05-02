@@ -135,14 +135,14 @@ export default function ArticleEditor() {
 
   // Load article content from Convex (once, on initial load)
   useEffect(() => {
-    if (editor && data?.blogHtml && !contentLoadedRef.current) {
+    if (editor && data && !contentLoadedRef.current) {
       // Defer to microtask to avoid flushSync inside React's commit phase
       queueMicrotask(() => {
-        editor.commands.setContent(data.blogHtml)
+        editor.commands.setContent(data?.blogHtml || "<p></p>")
         contentLoadedRef.current = true
       })
     }
-  }, [editor, data?.blogHtml])
+  }, [editor, data])
 
   const rect = useCursorVisibility({
     editor,

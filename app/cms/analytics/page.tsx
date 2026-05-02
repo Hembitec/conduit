@@ -196,7 +196,7 @@ export default function AnalyticsPage() {
     api.analytics.getPageViews,
     since !== undefined ? { since } : {}
   )
-  const articles = useQuery(api.blogs.getAllArticles)
+  const articles = useQuery(api.blogs.getArticleStats)
 
   const loading = rangeViews === undefined || articles === undefined
 

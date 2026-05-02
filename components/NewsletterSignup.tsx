@@ -27,9 +27,14 @@ export function NewsletterSignup({ blogUserId }: NewsletterSignupProps) {
       await subscribe({ email: email.trim(), blogUserId });
       toast.success("Subscribed successfully!");
       setEmail("");
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to subscribe";
+    } catch (err: any) {
+      let message = "Failed to subscribe. Please try again.";
+      if (typeof err.data === "string") {
+        message = err.data;
+      } else if (err.message) {
+        // Strip out the ugly "Uncaught Error: ConvexError: " prefixes
+        message = err.message.replace(/^.*?ConvexError:\s*/, "");
+      }
       toast.error(message);
     } finally {
       setIsSubmitting(false);

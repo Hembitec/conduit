@@ -10,6 +10,10 @@ export const trackPageView = mutation({
         const blog = await ctx.db.get(args.blogId);
         if (!blog) return;
 
+        // Prevent author from inflating their own view count
+        const userId = await getAuthUserId(ctx);
+        if (userId === blog.userId) return;
+
         await ctx.db.insert("pageViews", {
             blogId: args.blogId,
             timestamp: Date.now(),

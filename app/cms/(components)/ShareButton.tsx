@@ -18,7 +18,7 @@ interface ShareButtonProps {
 
 export function ShareButton({ slug, shareable }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
-  const publicUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL || ""}/article/public/${slug}`;
+  const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/blog/${slug}`;
 
   const handleCopy = async () => {
     if (!shareable) {

@@ -73,6 +73,7 @@ export const syncFromDocument = mutation({
         const readingTime = Math.ceil(wordCount / 200);
 
         await ctx.db.patch(blog._id, {
+            title: doc.title,
             blogHtml: doc.document,
             readingTime,
         });
@@ -116,9 +117,20 @@ export const updateArticle = mutation({
 
         await ctx.db.patch(blog._id, {
             ...rest,
-            ...(blogHtml ? { blogHtml } : {}),
+            ...(blogHtml !== undefined ? { blogHtml } : {}),
             readingTime,
         });
+
+        // Anti-fork protection: if this blog is linked to a document, keep the document in sync
+        if (blog.sourceDocumentId) {
+            const docUpdate: any = {};
+            if (args.title !== undefined) docUpdate.title = args.title;
+            if (blogHtml !== undefined) docUpdate.document = blogHtml;
+            
+            if (Object.keys(docUpdate).length > 0) {
+                await ctx.db.patch(blog.sourceDocumentId, docUpdate);
+            }
+        }
     },
 });
 
@@ -208,6 +220,29 @@ export const getAllArticles = query({
                 };
             })
         );
+    },
+});
+
+export const getArticleStats = query({
+    args: {},
+    handler: async (ctx) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) return [];
+        const blogs = await ctx.db
+            .query("blogs")
+            .withIndex("by_user", (q) => q.eq("userId", userId))
+            .order("desc")
+            .collect();
+
+        // Return lightweight records for analytics (omitting heavy blogHtml)
+        return blogs.map(blog => ({
+            _id: blog._id,
+            title: blog.title,
+            slug: blog.slug,
+            viewCount: blog.viewCount,
+            published: blog.published,
+            _creationTime: blog._creationTime
+        }));
     },
 });
 
