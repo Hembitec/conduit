@@ -4,6 +4,9 @@ import PortabilitySection from "@/components/LandingPage/PortabilitySection";
 import EditorSection from "@/components/LandingPage/EditorSection";
 import AnalyticsSection from "@/components/LandingPage/AnalyticsSection";
 import SEOSection from "@/components/LandingPage/SEOSection";
+import EngagementSection from "@/components/LandingPage/EngagementSection";
+import StackSection from "@/components/LandingPage/StackSection";
+import Footer from "@/components/LandingPage/Footer";
 
 export default function Home() {
   return (
@@ -12,7 +15,10 @@ export default function Home() {
       <EditorSection />
       <AnalyticsSection />
       <SEOSection />
+      <EngagementSection />
       <PortabilitySection />
+      <StackSection />
+      <Footer />
     </PageWrapper>
   );
 }
