@@ -35,25 +35,26 @@ export default function HeroSection() {
   return (
     <div className='flex flex-col items-center justify-center w-full overflow-x-hidden'>
       {/* Hero Section */}
-      <section className='flex flex-col items-center justify-center px-4 pt-16 pb-12 w-full max-w-6xl'>
-        <div className="mb-4">
+      <section className='flex flex-col items-center justify-center px-4 pt-24 pb-12 w-full max-w-6xl'>
+        <div className="mb-6">
           <AnimatedGradientTextComponent />
         </div>
-        <h1 className="scroll-m-20 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-center max-w-4xl px-4">
-          Write. Publish. Grow.
+        <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight text-center max-w-5xl px-4 leading-[0.9]">
+          Write once.<br />
+          <span className="text-primary">Publish everywhere.</span>
         </h1>
-        <p className="mx-auto max-w-2xl text-lg text-muted-foreground text-center mt-4 px-4">
-          A minimal blog CMS for focused writers. No complexity. No bloat.
-          Just your words, beautifully published.
+        <p className="mx-auto max-w-2xl text-xl text-muted-foreground text-center mt-8 px-4 leading-relaxed">
+          The high-performance content engine for modern writers. 
+          Manage your blog with a clean CMS and power any frontend via our lightning-fast API.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 mt-8">
+        <div className="flex flex-col sm:flex-row gap-4 mt-10">
           <Link href="/sign-up">
-            <Button size="lg" className="gap-2">
-              Get Started Free <ArrowRight className='w-4 h-4' />
+            <Button size="lg" className="h-14 px-8 text-lg rounded-full gap-2">
+              Get Started Free <ArrowRight className='w-5 h-5' />
             </Button>
           </Link>
           <Link href="/cms">
-            <Button size="lg" variant="outline" className="gap-2">
+            <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full gap-2">
               View Dashboard
             </Button>
           </Link>
