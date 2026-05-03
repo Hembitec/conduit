@@ -31,7 +31,7 @@ export const getSubscribers = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthenticated");
+    if (!userId) throw new ConvexError("Unauthenticated");
 
     const subs = await ctx.db
       .query("subscribers")
@@ -59,11 +59,11 @@ export const deleteSubscriber = mutation({
   args: { id: v.id("subscribers") },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthenticated");
+    if (!userId) throw new ConvexError("Unauthenticated");
 
     const subscriber = await ctx.db.get(args.id);
-    if (!subscriber) throw new Error("Not found");
-    if (subscriber.blogUserId !== userId) throw new Error("Unauthorized");
+    if (!subscriber) throw new ConvexError("Not found");
+    if (subscriber.blogUserId !== userId) throw new ConvexError("Unauthorized");
 
     await ctx.db.delete(args.id);
   },

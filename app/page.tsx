@@ -7,7 +7,7 @@ import AnalyticsSection from "@/components/LandingPage/AnalyticsSection";
 import SEOSection from "@/components/LandingPage/SEOSection";
 import EngagementSection from "@/components/LandingPage/EngagementSection";
 import StackSection from "@/components/LandingPage/StackSection";
-import Footer from "@/components/LandingPage/Footer";
+import CTASection from "@/components/LandingPage/CTASection";
 
 export default function Home() {
   return (
@@ -19,8 +19,8 @@ export default function Home() {
       <SEOSection />
       <EngagementSection />
       <PortabilitySection />
+      <CTASection />
       <StackSection />
-      <Footer />
     </PageWrapper>
   );
 }

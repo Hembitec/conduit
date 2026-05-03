@@ -1,0 +1,62 @@
+@use "variables" as *;
+@reference "../app/globals.css";
+
+/* Editor Wrapper */
+.simple-editor-wrapper {
+  background: hsl(var(--card));
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Editor Content Area */
+.simple-editor-content {
+  padding: 2rem;
+  font-family: inherit;
+  line-height: 1.6;
+  color: hsl(var(--foreground));
+  
+  &:focus {
+    outline: none;
+  }
+
+  .ProseMirror {
+    min-height: 500px;
+    outline: none;
+  }
+
+  /* Typography Styles (matching the public blog) */
+  h1 { @apply text-4xl font-bold mb-6 mt-8; }
+  h2 { @apply text-3xl font-bold mb-4 mt-8; }
+  h3 { @apply text-2xl font-bold mb-3 mt-6; }
+  p { @apply mb-4 leading-relaxed; }
+  
+  ul { @apply list-disc ml-6 mb-4; }
+  ol { @apply list-decimal ml-6 mb-4; }
+  li { @apply mb-1; }
+
+  blockquote {
+    @apply border-l-4 border-primary/50 pl-4 italic my-6 text-muted-foreground;
+  }
+
+  pre {
+    @apply bg-muted p-4 rounded-lg font-mono text-sm overflow-x-auto my-6;
+  }
+
+  code {
+    @apply bg-muted px-1.5 py-0.5 rounded font-mono text-sm;
+  }
+
+  img {
+    @apply rounded-xl border my-8 max-w-full h-auto mx-auto;
+  }
+
+  hr {
+    @apply border-t my-8;
+  }
+}
+
+/* Mobile Toolbar Overlay */
+.tiptap-mobile-toolbar {
+  @apply fixed bottom-0 left-0 right-0 z-50 bg-background border-t p-2 flex gap-2 overflow-x-auto;
+}

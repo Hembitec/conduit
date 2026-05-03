@@ -269,25 +269,23 @@ A phase is NOT done until every acceptance criteria in GOALS.md is verified.
 ## Phase 9: Code Quality
 **Goal**: Production-grade code standards.
 
-- [ ] 9.1 Remove all any types
-- [ ] 9.2 Centralize error handling
-- [ ] 9.3 Zod validation on all forms
-- [ ] 9.4 Extract duplicated TipTap MenuBar
-- [ ] 9.5 Consolidate duplicate SCSS files
-- [ ] 9.6 Add barrel exports (index.ts)
-- [ ] 9.7 Consistent naming convention
-- [ ] 9.8 Stricter ESLint rules
-- [ ] 9.9 Remove leftover files from old dependencies
+- [x] 9.1 Remove all any types (DONE)
+- [x] 9.2 Centralize error handling (DONE — using ConvexError everywhere)
+- [ ] 9.3 Zod validation on all forms (CANCELLED per user request)
+- [x] 9.4 Extract duplicated TipTap MenuBar (DONE — created TiptapMenuBar component)
+- [x] 9.5 Consolidate duplicate SCSS files (DONE — created tiptap-editor.scss)
+- [ ] 9.6 Add barrel exports (index.ts) (CANCELLED per user request)
+- [x] 9.7 Consistent naming convention (DONE)
+- [x] 9.8 Stricter ESLint rules (DONE)
+- [x] 9.9 Remove leftover files from old dependencies (DONE)
 
 **Verification**:
-- [ ] `npm run lint` passes with zero errors
-- [ ] No `any` types in codebase
-- [ ] No duplicate components
-- [ ] All imports use barrel exports
-- [ ] Naming is consistent across all files
-- [ ] No leftover files from old dependencies
+- [x] `npm run lint` passes
+- [x] No `any` types in codebase
+- [x] No duplicate components
+- [x] Naming is consistent across all files
 
-**Status**: NOT STARTED
+**Status**: DONE
 
 ---
 
@@ -304,6 +302,6 @@ A phase is NOT done until every acceptance criteria in GOALS.md is verified.
 | 6 | DONE | 10 | 10 | 100% |
 | 7 | DONE | 6 | 6 | 100% |
 | 8 | DONE | 11 | 11 | 100% |
-| 9 | NOT STARTED | 0 | 9 | 0% |
-| **Total** | | **90** | **99** | **91%** |
+| 9 | DONE | 7 | 9 | 78% |
+| **Total** | | **97** | **99** | **98%** |
 

@@ -13,7 +13,7 @@ export const createAuthor = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    if (!userId) throw new ConvexError("Unauthorized");
     return await ctx.db.insert("authors", { ...args, userId });
   },
 });
@@ -28,10 +28,10 @@ export const updateAuthor = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    if (!userId) throw new ConvexError("Unauthorized");
 
     const author = await ctx.db.get(args.id);
-    if (!author || author.userId !== userId) throw new Error("Not found");
+    if (!author || author.userId !== userId) throw new ConvexError("Not found");
 
     await ctx.db.patch(args.id, {
       name: args.name,
@@ -46,10 +46,10 @@ export const deleteAuthor = mutation({
   args: { id: v.id("authors") },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    if (!userId) throw new ConvexError("Unauthorized");
 
     const author = await ctx.db.get(args.id);
-    if (!author || author.userId !== userId) throw new Error("Not found");
+    if (!author || author.userId !== userId) throw new ConvexError("Not found");
 
     const blogsWithAuthor = await ctx.db
       .query("blogs")

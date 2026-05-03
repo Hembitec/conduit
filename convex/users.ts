@@ -1,5 +1,5 @@
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ─── User / Profile Mutations ────────────────────────────────────
@@ -8,7 +8,7 @@ export const generateApiKey = mutation({
     args: {},
     handler: async (ctx) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
 
         // Generate a cryptographically secure 32-byte hex key
         const array = new Uint8Array(32);
@@ -43,7 +43,7 @@ export const upsertUserProfile = mutation({
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
 
         const existing = await ctx.db
             .query("userProfiles")

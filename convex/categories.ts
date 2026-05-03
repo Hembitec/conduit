@@ -8,7 +8,7 @@ export const createCategory = mutation({
   args: { name: v.string() },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    if (!userId) throw new ConvexError("Unauthorized");
 
     // Prevent duplicates for this user
     const existing = await ctx.db
@@ -26,10 +26,10 @@ export const updateCategory = mutation({
   args: { id: v.id("categories"), name: v.string() },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    if (!userId) throw new ConvexError("Unauthorized");
 
     const category = await ctx.db.get(args.id);
-    if (!category || category.userId !== userId) throw new Error("Not found");
+    if (!category || category.userId !== userId) throw new ConvexError("Not found");
 
     const existing = await ctx.db
       .query("categories")
@@ -51,10 +51,10 @@ export const deleteCategory = mutation({
   args: { id: v.id("categories") },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
+    if (!userId) throw new ConvexError("Unauthorized");
 
     const category = await ctx.db.get(args.id);
-    if (!category || category.userId !== userId) throw new Error("Not found");
+    if (!category || category.userId !== userId) throw new ConvexError("Not found");
 
     const blogsWithCategory = await ctx.db
       .query("blogs")

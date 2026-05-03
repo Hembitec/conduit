@@ -25,8 +25,9 @@ export async function POST(request: Request) {
         blogUserId: profile.userId 
       });
       return NextResponse.json({ status: 200, message: "Successfully subscribed" }, { status: 200 });
-    } catch (err: any) {
-      return NextResponse.json({ status: 400, message: err.message }, { status: 400 });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to subscribe";
+      return NextResponse.json({ status: 400, message }, { status: 400 });
     }
   } catch (err) {
     return NextResponse.json({ status: 500, message: "Internal server error" }, { status: 500 });

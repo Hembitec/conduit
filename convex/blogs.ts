@@ -21,7 +21,7 @@ export const storeArticle = mutation({
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
 
         // Reject duplicate slugs for this user
         const existing = await ctx.db
@@ -51,7 +51,7 @@ export const syncFromDocument = mutation({
     args: { slug: v.string() },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
 
         const blog = await ctx.db
             .query("blogs")
@@ -96,7 +96,7 @@ export const updateArticle = mutation({
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
 
         const blog = await ctx.db
             .query("blogs")
@@ -104,7 +104,7 @@ export const updateArticle = mutation({
                 q.eq("userId", userId).eq("slug", args.slug)
             )
             .unique();
-        if (!blog) throw new Error("Article not found");
+        if (!blog) throw new ConvexError("Article not found");
 
         const { slug, blogHtml, ...rest } = args;
 
@@ -123,7 +123,7 @@ export const updateArticle = mutation({
 
         // Anti-fork protection: if this blog is linked to a document, keep the document in sync
         if (blog.sourceDocumentId) {
-            const docUpdate: any = {};
+            const docUpdate: { title?: string; document?: string } = {};
             if (args.title !== undefined) docUpdate.title = args.title;
             if (blogHtml !== undefined) docUpdate.document = blogHtml;
             
@@ -138,7 +138,7 @@ export const deleteBlog = mutation({
     args: { slug: v.string() },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
 
         const blog = await ctx.db
             .query("blogs")
@@ -146,7 +146,7 @@ export const deleteBlog = mutation({
                 q.eq("userId", userId).eq("slug", args.slug)
             )
             .unique();
-        if (!blog) throw new Error("Article not found");
+        if (!blog) throw new ConvexError("Article not found");
         await ctx.db.delete(blog._id);
     },
 });
@@ -158,7 +158,7 @@ export const statusBlog = mutation({
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
 
         const blog = await ctx.db
             .query("blogs")
@@ -166,7 +166,7 @@ export const statusBlog = mutation({
                 q.eq("userId", userId).eq("slug", args.slug)
             )
             .unique();
-        if (!blog) throw new Error("Article not found");
+        if (!blog) throw new ConvexError("Article not found");
         await ctx.db.patch(blog._id, { published: args.published });
     },
 });
@@ -178,7 +178,7 @@ export const shareArticle = mutation({
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
 
         const blog = await ctx.db
             .query("blogs")
@@ -186,7 +186,7 @@ export const shareArticle = mutation({
                 q.eq("userId", userId).eq("slug", args.slug)
             )
             .unique();
-        if (!blog) throw new Error("Article not found");
+        if (!blog) throw new ConvexError("Article not found");
         await ctx.db.patch(blog._id, { shareable: args.shareable });
     },
 });

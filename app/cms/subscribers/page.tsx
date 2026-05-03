@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Doc, Id } from "@/convex/_generated/dataModel";
 import { format } from "date-fns";
 import {
   Table,
@@ -20,13 +21,14 @@ export default function SubscribersPage() {
   const subscribers = useQuery(api.subscribers.getSubscribers);
   const deleteSubscriber = useMutation(api.subscribers.deleteSubscriber);
 
-  const handleDelete = async (id: any) => {
+  const handleDelete = async (id: Id<"subscribers">) => {
     if (!confirm("Are you sure you want to delete this subscriber?")) return;
     try {
       await deleteSubscriber({ id });
       toast.success("Subscriber deleted");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to delete subscriber");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to delete subscriber";
+      toast.error(message);
     }
   };
 
@@ -35,7 +37,7 @@ export default function SubscribersPage() {
     
     const csvContent = "data:text/csv;charset=utf-8," 
       + "Email,Date Subscribed\n" 
-      + subscribers.map((s: any) => `${s.email},${new Date(s._creationTime).toISOString()}`).join("\n");
+      + subscribers.map((s: Doc<"subscribers">) => `${s.email},${new Date(s._creationTime).toISOString()}`).join("\n");
       
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -98,7 +100,7 @@ export default function SubscribersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {subscribers.map((sub: any) => (
+              {subscribers.map((sub: Doc<"subscribers">) => (
                 <TableRow key={sub._id}>
                   <TableCell className="font-medium">{sub.email}</TableCell>
                   <TableCell className="text-muted-foreground">

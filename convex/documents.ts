@@ -1,5 +1,5 @@
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ─── Document Mutations ──────────────────────────────────────────
@@ -8,7 +8,7 @@ export const createDocument = mutation({
     args: { title: v.string() },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
         return await ctx.db.insert("documents", {
             title: args.title,
             document: "",
@@ -25,9 +25,9 @@ export const storeDocument = mutation({
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
         const doc = await ctx.db.get(args.id);
-        if (!doc || doc.userId !== userId) throw new Error("Not found");
+        if (!doc || doc.userId !== userId) throw new ConvexError("Not found");
         await ctx.db.patch(args.id, {
             title: args.title,
             document: args.document,
@@ -39,9 +39,9 @@ export const deleteDocument = mutation({
     args: { id: v.id("documents") },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
         const doc = await ctx.db.get(args.id);
-        if (!doc || doc.userId !== userId) throw new Error("Not found");
+        if (!doc || doc.userId !== userId) throw new ConvexError("Not found");
         await ctx.db.delete(args.id);
     },
 });

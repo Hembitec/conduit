@@ -1,5 +1,5 @@
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ─── Comment Mutations ───────────────────────────────────────────
@@ -12,11 +12,11 @@ export const createComment = mutation({
         content: v.string(),
     },
     handler: async (ctx, args) => {
-        if (args.content.length > 5000) throw new Error("Comment is too long");
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(args.authorEmail)) throw new Error("Invalid email address");
+        if (args.content.length > 5000) throw new ConvexError("Comment is too long");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(args.authorEmail)) throw new ConvexError("Invalid email address");
 
         const blog = await ctx.db.get(args.blogId);
-        if (!blog || !blog.published) throw new Error("Article not found");
+        if (!blog || !blog.published) throw new ConvexError("Article not found");
 
         return await ctx.db.insert("comments", {
             blogId: args.blogId,
@@ -32,13 +32,13 @@ export const approveComment = mutation({
     args: { id: v.id("comments"), approved: v.boolean() },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
 
         const comment = await ctx.db.get(args.id);
-        if (!comment) throw new Error("Comment not found");
+        if (!comment) throw new ConvexError("Comment not found");
 
         const blog = await ctx.db.get(comment.blogId);
-        if (!blog || blog.userId !== userId) throw new Error("Forbidden");
+        if (!blog || blog.userId !== userId) throw new ConvexError("Forbidden");
 
         await ctx.db.patch(args.id, { approved: args.approved });
     },
@@ -48,13 +48,13 @@ export const deleteComment = mutation({
     args: { id: v.id("comments") },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("Unauthorized");
+        if (!userId) throw new ConvexError("Unauthorized");
 
         const comment = await ctx.db.get(args.id);
-        if (!comment) throw new Error("Comment not found");
+        if (!comment) throw new ConvexError("Comment not found");
 
         const blog = await ctx.db.get(comment.blogId);
-        if (!blog || blog.userId !== userId) throw new Error("Forbidden");
+        if (!blog || blog.userId !== userId) throw new ConvexError("Forbidden");
 
         await ctx.db.delete(args.id);
     },

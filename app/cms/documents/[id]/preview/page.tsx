@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit, Globe } from "lucide-react";
 import { NavBar } from "@/components/NavBar";
 
-export default async function DocumentPreview({ params }: { params: { id: string } }) {
+export default async function DocumentPreview({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const token = await convexAuthNextjsToken();
   if (!token) return notFound();
 
   const document = await fetchQuery(
     api.documents.getDocumentById,
-    { id: params.id as Id<"documents"> },
+    { id: id as Id<"documents"> },
     { token }
   );
 

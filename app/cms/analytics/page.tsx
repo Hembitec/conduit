@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import {
@@ -189,8 +189,10 @@ function TopArticlesTable({
 
 export default function AnalyticsPage() {
   const [range, setRange] = useState<DateRange>("30d")
-  const since = getRangeSince(range)
-  const chartDays = getRangeDays(range)
+  
+  // Memoize since to avoid infinite re-renders from Date.now() changing every render
+  const since = useMemo(() => getRangeSince(range), [range])
+  const chartDays = useMemo(() => getRangeDays(range), [range])
 
   const rangeViews = useQuery(
     api.analytics.getPageViews,
@@ -206,13 +208,13 @@ export default function AnalyticsPage() {
   const avgViews =
     publishedCount > 0 ? Math.round(totalViews / publishedCount) : 0
 
-  const dayBuckets = buildDayBuckets(rangeViews ?? [], chartDays)
-  const maxCount = Math.max(...dayBuckets.map(([, c]) => c), 1)
+  const dayBuckets = useMemo(() => buildDayBuckets(rangeViews ?? [], chartDays), [rangeViews, chartDays])
+  const maxCount = useMemo(() => Math.max(...dayBuckets.map(([, c]) => c), 1), [dayBuckets])
 
-  const topEntry = dayBuckets.reduce<[string, number]>(
+  const topEntry = useMemo(() => dayBuckets.reduce<[string, number]>(
     (best, curr) => (curr[1] > best[1] ? curr : best),
     ["—", 0]
-  )
+  ), [dayBuckets])
   const topDay =
     topEntry[1] > 0 ? `${topEntry[0]} (${topEntry[1]})` : "—"
 
