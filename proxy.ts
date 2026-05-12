@@ -18,6 +18,9 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   }
 }, {
   apiRoute: "/api/auth",
+  cookieConfig: {
+    maxAge: 60 * 60 * 24 * 30, // 30 days — matches Convex backend session default
+  },
 });
 
 export const config = {
