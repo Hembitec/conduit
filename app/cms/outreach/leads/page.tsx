@@ -2,18 +2,32 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { Lead } from "@/types";
 import { LeadTable } from "./(components)/LeadTable";
 import { ImportLeadsModal } from "./(components)/ImportLeadsModal";
 import { AddLeadModal } from "./(components)/AddLeadModal";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users } from "lucide-react";
+import { Users, FolderOpen } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 export default function LeadsPage() {
-    const leadsData = useQuery(api.leads.getLeadsByUser);
+    const searchParams = useSearchParams();
+    const folderIdParam = searchParams.get("folder");
+    const folderId = folderIdParam
+        ? (folderIdParam as Id<"leadFolders">)
+        : undefined;
+
+    const leadsData = useQuery(api.leads.getLeadsByUser, { folderId });
     const categoriesData = useQuery(api.leads.getLeadCategories);
+    const foldersData = useQuery(api.leadFolders.getFoldersByUser);
+    const folderDetails = folderId
+        ? useQuery(api.leadFolders.getFolderById, { id: folderId })
+        : null;
+
     const leads = (leadsData ?? []) as Lead[];
     const categories = categoriesData ?? [];
+    const folders = foldersData ?? [];
     const loading = leadsData === undefined;
 
     return (
@@ -22,12 +36,16 @@ export default function LeadsPage() {
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-6 mb-8">
                 <div className="flex flex-col gap-1.5">
                     <p className="text-muted-foreground text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                        <Users className="h-4 w-4" />
+                        {folderDetails ? (
+                            <FolderOpen className="h-4 w-4" />
+                        ) : (
+                            <Users className="h-4 w-4" />
+                        )}
                         Outreach
                     </p>
                     <div className="flex items-center gap-3">
                         <h1 className="font-serif text-3xl sm:text-4xl tracking-tight text-foreground">
-                            Leads
+                            {folderDetails ? folderDetails.name : "Leads"}
                         </h1>
                         {!loading && (
                             <span className="text-xs font-medium text-muted-foreground rounded-full border border-border/60 bg-muted/20 px-2 py-0.5">
@@ -51,7 +69,7 @@ export default function LeadsPage() {
                     ))}
                 </div>
             ) : (
-                <LeadTable leads={leads} categories={categories} />
+                <LeadTable leads={leads} categories={categories} folders={folders} />
             )}
         </main>
     );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,7 @@ import { TemplateEditor } from "../(components)/TemplateEditor";
 
 export default function NewTemplatePage() {
     const createTemplate = useMutation(api.emailTemplates.createTemplate);
+    const customFieldKeys = useQuery(api.leads.getCustomFieldKeys) ?? [];
     const router = useRouter();
 
     const handleSave = async (data: { name: string; subject: string; body: string }) => {
@@ -33,6 +34,7 @@ export default function NewTemplatePage() {
                 onSave={handleSave}
                 saveLabel="Create Template"
                 savingLabel="Creating..."
+                customFieldKeys={customFieldKeys}
             />
         </main>
     );

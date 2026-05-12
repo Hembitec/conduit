@@ -93,6 +93,13 @@ export default defineSchema({
     userId: v.id("users"),
   }).index("by_user", ["userId"]),
 
+  // ── Outreach: Lead Folders ──
+  leadFolders: defineTable({
+    name: v.string(),
+    color: v.optional(v.string()),
+    userId: v.id("users"),
+  }).index("by_user", ["userId"]),
+
   // ── Outreach: Leads ──
   leads: defineTable({
     companyName: v.optional(v.string()),
@@ -103,13 +110,16 @@ export default defineSchema({
     title: v.optional(v.string()),
     email: v.string(),
     category: v.optional(v.string()),
+    customFields: v.optional(v.record(v.string(), v.string())),
+    folderId: v.optional(v.id("leadFolders")),
     status: v.string(), // "new" | "contacted" | "replied" | "bounced" | "unsubscribed"
     userId: v.id("users"),
   })
     .index("by_user", ["userId"])
     .index("by_user_and_status", ["userId", "status"])
     .index("by_user_and_email", ["userId", "email"])
-    .index("by_user_and_category", ["userId", "category"]),
+    .index("by_user_and_category", ["userId", "category"])
+    .index("by_user_and_folder", ["userId", "folderId"]),
 
   // ── Outreach: Email Templates ──
   emailTemplates: defineTable({
@@ -150,4 +160,76 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_campaign", ["campaignId"])
     .index("by_brevoMessageId", ["brevoMessageId"]),
+
+  // ── App Feedback ──
+  feedback: defineTable({
+    // Who submitted it (free text — no auth required)
+    authorName: v.string(),
+    authorEmail: v.optional(v.string()),
+    // What they said
+    type: v.string(), // "bug" | "feature" | "general"
+    message: v.string(),
+    // Optional page/url context from their app
+    pageUrl: v.optional(v.string()),
+    // Up to 2 R2 screenshot public URLs
+    screenshots: v.optional(v.array(v.string())),
+    // Internal status for the CMS owner
+    status: v.string(), // "new" | "in_progress" | "resolved" | "dismissed"
+    // Which CMS account this feedback belongs to (via API key)
+    userId: v.id("users"),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_status", ["userId", "status"])
+    .index("by_user_and_type", ["userId", "type"]),
+
+  // ── Surveys ──
+  surveys: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    slug: v.string(),
+    status: v.string(), // "draft" | "active" | "closed"
+    questions: v.array(
+      v.object({
+        id: v.string(),
+        type: v.string(), // "nps" | "open_ended" | "multiple_choice" | "rating" | "text_feedback"
+        title: v.string(),
+        description: v.optional(v.string()),
+        required: v.boolean(),
+        options: v.optional(v.array(v.string())),
+        ratingScale: v.optional(v.number()),
+        ratingLabels: v.optional(
+          v.object({ low: v.string(), high: v.string() })
+        ),
+      })
+    ),
+    settings: v.object({
+      allowAnonymous: v.boolean(),
+      requireEmail: v.boolean(),
+      showProgress: v.boolean(),
+    }),
+    responseCount: v.number(),
+    userId: v.id("users"),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_slug", ["userId", "slug"])
+    .index("by_user_and_status", ["userId", "status"]),
+
+  // ── Survey Responses ──
+  surveyResponses: defineTable({
+    surveyId: v.id("surveys"),
+    respondentName: v.optional(v.string()),
+    respondentEmail: v.optional(v.string()),
+    answers: v.array(
+      v.object({
+        questionId: v.string(),
+        type: v.string(),
+        value: v.union(v.string(), v.number()),
+      })
+    ),
+    pageUrl: v.optional(v.string()),
+    completedAt: v.number(),
+    userId: v.id("users"),
+  })
+    .index("by_survey", ["surveyId"])
+    .index("by_user", ["userId"]),
 });

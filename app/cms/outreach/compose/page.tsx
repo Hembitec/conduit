@@ -16,6 +16,7 @@ import {
     User,
     Mail,
     Tag,
+    FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,9 +52,10 @@ export default function ComposePage({ searchParams }: ComposePageProps) {
         return resolvedParams.leads.split(",").filter(Boolean);
     }, [resolvedParams.leads]);
 
-    const allLeads = useQuery(api.leads.getLeadsByUser);
+    const allLeads = useQuery(api.leads.getLeadsByUser, {});
     const templates = useQuery(api.emailTemplates.getTemplatesByUser);
     const categories = useQuery(api.leads.getLeadCategories) ?? [];
+    const folders = useQuery(api.leadFolders.getFoldersByUser) ?? [];
     const sendToSelected = useMutation(api.campaigns.sendToSelectedLeads);
     const router = useRouter();
 
@@ -272,6 +274,42 @@ export default function ComposePage({ searchParams }: ComposePageProps) {
                                                 }}
                                             >
                                                 + {cat} ({count})
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                            {/* Folder quick-select */}
+                            {folders.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-2 mb-3">
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <FolderOpen className="h-3 w-3" />
+                                        By folder:
+                                    </span>
+                                    {folders.map((folder) => {
+                                        const folderLeads = allLeads?.filter(
+                                            (l) => l.folderId === folder._id && !selectedIds.has(l._id)
+                                        );
+                                        const count = folderLeads?.length ?? 0;
+                                        if (count === 0) return null;
+                                        return (
+                                            <Button
+                                                key={folder._id}
+                                                variant="outline"
+                                                size="sm"
+                                                className="text-xs h-7"
+                                                onClick={() => {
+                                                    if (!allLeads) return;
+                                                    setSelectedIds((prev) => {
+                                                        const next = new Set(prev);
+                                                        allLeads
+                                                            .filter((l) => l.folderId === folder._id)
+                                                            .forEach((l) => next.add(l._id));
+                                                        return next;
+                                                    });
+                                                }}
+                                            >
+                                                + {folder.name} ({count})
                                             </Button>
                                         );
                                     })}

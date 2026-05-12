@@ -56,6 +56,15 @@ export const sendEmailToLead = internalAction({
             subject = subject.replace(regex, value);
         }
 
+        // Inject custom field variables (e.g. {{Industry}}, {{LinkedIn}})
+        if (lead.customFields) {
+            for (const [key, value] of Object.entries(lead.customFields)) {
+                const regex = new RegExp(`\\{\\{${key}\\}\\}`, "g");
+                body = body.replace(regex, value);
+                subject = subject.replace(regex, value);
+            }
+        }
+
         // Step 3: Send via Brevo API
         const brevoApiKey = process.env.BREVO_API_KEY;
         if (!brevoApiKey) {

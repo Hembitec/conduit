@@ -1,8 +1,10 @@
 import {
   BarChart3,
   BookA,
+  ClipboardList,
   FileText,
   Home,
+  Inbox,
   Layers,
   LayoutTemplate,
   Mail,
@@ -89,6 +91,8 @@ export const navEntries: NavEntry[] = [
     icon: Settings,
     children: [
       { label: "Blog Analytics", href: "/cms/analytics", icon: BarChart3 },
+      { label: "Feedback", href: "/cms/feedback", icon: Inbox },
+      { label: "Surveys", href: "/cms/surveys", icon: ClipboardList },
       { label: "API Docs", href: "/cms/api", icon: FileText },
     ]
   }

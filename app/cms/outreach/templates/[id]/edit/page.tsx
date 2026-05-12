@@ -21,6 +21,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
         id: id as Id<"emailTemplates">,
     });
     const updateTemplate = useMutation(api.emailTemplates.updateTemplate);
+    const customFieldKeys = useQuery(api.leads.getCustomFieldKeys) ?? [];
     const router = useRouter();
 
     const handleSave = async (data: { name: string; subject: string; body: string }) => {
@@ -83,6 +84,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                 onSave={handleSave}
                 saveLabel="Update Template"
                 savingLabel="Updating..."
+                customFieldKeys={customFieldKeys}
             />
         </main>
     );

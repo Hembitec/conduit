@@ -5,10 +5,19 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 // ─── Lead Queries ────────────────────────────────────────────────
 
 export const getLeadsByUser = query({
-    args: {},
-    handler: async (ctx) => {
+    args: { folderId: v.optional(v.id("leadFolders")) },
+    handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
         if (!userId) return [];
+        if (args.folderId) {
+            return await ctx.db
+                .query("leads")
+                .withIndex("by_user_and_folder", (q) =>
+                    q.eq("userId", userId).eq("folderId", args.folderId)
+                )
+                .order("desc")
+                .take(500);
+        }
         return await ctx.db
             .query("leads")
             .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -73,6 +82,7 @@ export const bulkInsertLeads = mutation({
                 decisionMakerName: v.optional(v.string()),
                 title: v.optional(v.string()),
                 category: v.optional(v.string()),
+                customFields: v.optional(v.record(v.string(), v.string())),
             })
         ),
     },
@@ -126,6 +136,7 @@ export const insertSingleLead = mutation({
         website: v.optional(v.string()),
         location: v.optional(v.string()),
         category: v.optional(v.string()),
+        customFields: v.optional(v.record(v.string(), v.string())),
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
@@ -192,6 +203,120 @@ export const deleteLead = mutation({
     },
 });
 
+// ─── Bulk Operations ─────────────────────────────────────────────
+
+export const bulkDeleteLeads = mutation({
+    args: { leadIds: v.array(v.id("leads")) },
+    handler: async (ctx, args) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) throw new ConvexError("Unauthorized");
+        if (args.leadIds.length > 100) {
+            throw new ConvexError("Maximum 100 leads per bulk delete");
+        }
+        let deleted = 0;
+        for (const leadId of args.leadIds) {
+            const lead = await ctx.db.get(leadId);
+            if (lead && lead.userId === userId) {
+                await ctx.db.delete(leadId);
+                deleted++;
+            }
+        }
+        return { deleted };
+    },
+});
+
+export const bulkUpdateLeadStatus = mutation({
+    args: {
+        leadIds: v.array(v.id("leads")),
+        status: v.string(),
+    },
+    handler: async (ctx, args) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) throw new ConvexError("Unauthorized");
+        if (args.leadIds.length > 100) {
+            throw new ConvexError("Maximum 100 leads per bulk update");
+        }
+        let updated = 0;
+        for (const leadId of args.leadIds) {
+            const lead = await ctx.db.get(leadId);
+            if (lead && lead.userId === userId) {
+                await ctx.db.patch(leadId, { status: args.status });
+                updated++;
+            }
+        }
+        return { updated };
+    },
+});
+
+export const updateLead = mutation({
+    args: {
+        leadId: v.id("leads"),
+        email: v.optional(v.string()),
+        companyName: v.optional(v.string()),
+        decisionMakerName: v.optional(v.string()),
+        title: v.optional(v.string()),
+        phone: v.optional(v.string()),
+        website: v.optional(v.string()),
+        location: v.optional(v.string()),
+        category: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) throw new ConvexError("Unauthorized");
+        const lead = await ctx.db.get(args.leadId);
+        if (!lead || lead.userId !== userId) throw new ConvexError("Not found");
+
+        const { leadId, ...updates } = args;
+        const patch: Record<string, string | undefined> = {};
+        if (updates.email !== undefined) {
+            const email = updates.email.toLowerCase().trim();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                throw new ConvexError("Invalid email address");
+            }
+            patch.email = email;
+        }
+        if (updates.companyName !== undefined) patch.companyName = updates.companyName;
+        if (updates.decisionMakerName !== undefined) patch.decisionMakerName = updates.decisionMakerName;
+        if (updates.title !== undefined) patch.title = updates.title;
+        if (updates.phone !== undefined) patch.phone = updates.phone;
+        if (updates.website !== undefined) patch.website = updates.website;
+        if (updates.location !== undefined) patch.location = updates.location;
+        if (updates.category !== undefined) patch.category = updates.category;
+
+        await ctx.db.patch(leadId, patch);
+    },
+});
+
+export const bulkMoveToFolder = mutation({
+    args: {
+        leadIds: v.array(v.id("leads")),
+        folderId: v.optional(v.id("leadFolders")),
+    },
+    handler: async (ctx, args) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) throw new ConvexError("Unauthorized");
+        if (args.leadIds.length > 100) {
+            throw new ConvexError("Maximum 100 leads per bulk move");
+        }
+        // Verify folder belongs to user (if provided)
+        if (args.folderId) {
+            const folder = await ctx.db.get(args.folderId);
+            if (!folder || folder.userId !== userId) {
+                throw new ConvexError("Folder not found");
+            }
+        }
+        let moved = 0;
+        for (const leadId of args.leadIds) {
+            const lead = await ctx.db.get(leadId);
+            if (lead && lead.userId === userId) {
+                await ctx.db.patch(leadId, { folderId: args.folderId });
+                moved++;
+            }
+        }
+        return { moved };
+    },
+});
+
 // ─── Category Queries ────────────────────────────────────────────
 
 export const getLeadCategories = query({
@@ -223,5 +348,26 @@ export const getLeadsByCategory = query({
             )
             .order("desc")
             .take(500);
+    },
+});
+
+// ─── Custom Field Keys ───────────────────────────────────────────
+
+export const getCustomFieldKeys = query({
+    args: {},
+    handler: async (ctx) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) return [];
+        const leads = await ctx.db
+            .query("leads")
+            .withIndex("by_user", (q) => q.eq("userId", userId))
+            .take(500);
+        const keys = new Set<string>();
+        for (const lead of leads) {
+            if (lead.customFields) {
+                for (const key of Object.keys(lead.customFields)) keys.add(key);
+            }
+        }
+        return Array.from(keys).sort();
     },
 });

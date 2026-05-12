@@ -39,6 +39,7 @@ import {
   type NavGroup,
 } from "./navData"
 import { MobileNav } from "./MobileNav"
+import { FolderNav } from "./FolderNav"
 
 // ─── Collapsed icon link (tooltip on hover) ─────────────────────
 
@@ -162,6 +163,9 @@ function ExpandedGroup({
               isActive={isRouteActive(child.href, pathname)}
             />
           ))}
+          {group.label === "Outreach" && (
+            <FolderNav pathname={pathname} />
+          )}
         </div>
       )}
     </div>

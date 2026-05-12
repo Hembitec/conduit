@@ -208,6 +208,8 @@ export interface Lead {
   title?: string;
   email: string;
   category?: string;
+  customFields?: Record<string, string>;
+  folderId?: Id<"leadFolders">;
   status: string;
   userId: Id<"users">;
   _creationTime: number;
@@ -250,3 +252,85 @@ export interface EmailLog {
   userId: Id<"users">;
   _creationTime: number;
 }
+
+// ============================================================================
+// Feedback Types
+// ============================================================================
+
+export type FeedbackType = "bug" | "feature" | "general";
+export type FeedbackStatus = "new" | "in_progress" | "resolved" | "dismissed";
+
+export interface Feedback {
+  _id: Id<"feedback">;
+  authorName: string;
+  authorEmail?: string;
+  type: FeedbackType;
+  message: string;
+  pageUrl?: string;
+  screenshots?: string[];
+  status: FeedbackStatus;
+  userId: Id<"users">;
+  _creationTime: number;
+}
+
+// ============================================================================
+// Survey Types
+// ============================================================================
+
+export type QuestionType =
+  | "nps"
+  | "open_ended"
+  | "multiple_choice"
+  | "rating"
+  | "text_feedback";
+
+export type SurveyStatus = "draft" | "active" | "closed";
+
+export interface SurveyQuestion {
+  id: string;
+  type: QuestionType;
+  title: string;
+  description?: string;
+  required: boolean;
+  options?: string[];
+  ratingScale?: number;
+  ratingLabels?: { low: string; high: string };
+}
+
+export interface SurveySettings {
+  allowAnonymous: boolean;
+  requireEmail: boolean;
+  showProgress: boolean;
+}
+
+export interface Survey {
+  _id: Id<"surveys">;
+  title: string;
+  description?: string;
+  slug: string;
+  status: SurveyStatus;
+  questions: SurveyQuestion[];
+  settings: SurveySettings;
+  responseCount: number;
+  userId: Id<"users">;
+  _creationTime: number;
+}
+
+export interface SurveyAnswer {
+  questionId: string;
+  type: string;
+  value: string | number;
+}
+
+export interface SurveyResponse {
+  _id: Id<"surveyResponses">;
+  surveyId: Id<"surveys">;
+  respondentName?: string;
+  respondentEmail?: string;
+  answers: SurveyAnswer[];
+  pageUrl?: string;
+  completedAt: number;
+  userId: Id<"users">;
+  _creationTime: number;
+}
+

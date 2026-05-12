@@ -93,6 +93,12 @@ export function ImportLeadsModal({ onImportComplete }: ImportLeadsModalProps) {
         });
     };
 
+    // Detect unmapped CSV columns that will be stored as customFields
+    const mappedCsvColumns = new Set(
+        Object.values(mapping).filter((v) => v && v !== "__skip__")
+    );
+    const unmappedColumns = csvHeaders.filter((h) => !mappedCsvColumns.has(h));
+
     const handleImport = async () => {
         if (!mapping.email) {
             toast.error("Email column mapping is required");
@@ -101,7 +107,7 @@ export function ImportLeadsModal({ onImportComplete }: ImportLeadsModalProps) {
 
         setStep("importing");
 
-        // Transform CSV data using the mapping
+        // Transform CSV data using the mapping + capture extra columns
         const leads = csvData.map((row) => {
             const lead: Record<string, string | undefined> = {};
             for (const field of LEAD_FIELDS) {
@@ -109,6 +115,15 @@ export function ImportLeadsModal({ onImportComplete }: ImportLeadsModalProps) {
                 if (csvColumn && row[csvColumn]) {
                     lead[field.key] = row[csvColumn].trim();
                 }
+            }
+            // Collect unmapped columns into customFields
+            const customFields: Record<string, string> = {};
+            for (const col of unmappedColumns) {
+                const val = row[col]?.trim();
+                if (val) customFields[col] = val;
+            }
+            if (Object.keys(customFields).length > 0) {
+                lead.customFields = JSON.stringify(customFields);
             }
             return lead as { email: string; [key: string]: string | undefined };
         }).filter((lead) => lead.email);
@@ -121,7 +136,17 @@ export function ImportLeadsModal({ onImportComplete }: ImportLeadsModalProps) {
         for (let i = 0; i < leads.length; i += BATCH_SIZE) {
             const batch = leads.slice(i, i + BATCH_SIZE);
             try {
-                const res = await bulkInsert({ leads: batch });
+                // Re-parse customFields from serialized JSON string back to object
+                const parsedBatch = batch.map((l) => {
+                    const { customFields: cf, ...rest } = l;
+                    const parsed = cf ? JSON.parse(cf) : undefined;
+                    return { ...rest, customFields: parsed } as {
+                        email: string;
+                        customFields?: Record<string, string>;
+                        [key: string]: string | Record<string, string> | undefined;
+                    };
+                });
+                const res = await bulkInsert({ leads: parsedBatch });
                 totalInserted += res.inserted;
                 totalSkipped += res.skipped;
             } catch {
@@ -233,6 +258,16 @@ export function ImportLeadsModal({ onImportComplete }: ImportLeadsModalProps) {
                                 </div>
                             ))}
                         </div>
+                        {unmappedColumns.length > 0 && (
+                            <div className="rounded-md border bg-muted/30 px-3 py-2">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                    {unmappedColumns.length} extra column{unmappedColumns.length !== 1 ? "s" : ""} will also be imported as custom fields:
+                                </p>
+                                <p className="text-xs text-muted-foreground/80 mt-1">
+                                    {unmappedColumns.join(", ")}
+                                </p>
+                            </div>
+                        )}
                         <div className="flex justify-end gap-3 pt-2">
                             <Button variant="outline" onClick={() => setStep("upload")}>
                                 Back

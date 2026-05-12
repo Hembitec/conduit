@@ -1,40 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Lead } from "@/types";
-import { Search, Trash2, MoreHorizontal, Send, CheckSquare, X, Tag } from "lucide-react";
+import {
+    Search, Trash2, MoreHorizontal, Send, CheckSquare, X,
+    Tag, Pencil, ChevronDown, Columns3, FolderOpen,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+    DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel,
+    AlertDialogContent, AlertDialogDescription,
+    AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/EmptyState";
+import { EditLeadDrawer } from "./EditLeadDrawer";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
+import { useCustomFieldKeys, useColumnVisibility, ColumnToggle } from "./ColumnVisibility";
 
 const STATUS_COLORS: Record<string, string> = {
     new: "bg-primary/10 text-primary",
@@ -44,18 +43,38 @@ const STATUS_COLORS: Record<string, string> = {
     unsubscribed: "bg-muted text-muted-foreground",
 };
 
+const STATUS_OPTIONS = ["new", "contacted", "replied", "bounced", "unsubscribed"];
+
+interface FolderWithCount {
+    _id: string;
+    name: string;
+    leadCount: number;
+}
+
 interface LeadTableProps {
     leads: Lead[];
     categories: string[];
+    folders: FolderWithCount[];
 }
 
-export function LeadTable({ leads, categories }: LeadTableProps) {
+export function LeadTable({ leads, categories, folders }: LeadTableProps) {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [categoryFilter, setCategoryFilter] = useState("all");
     const [selectedIds, setSelectedIds] = useState<Set<Id<"leads">>>(new Set());
+    const [editLead, setEditLead] = useState<Lead | null>(null);
+    const [editOpen, setEditOpen] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [bulkDeleting, setBulkDeleting] = useState(false);
+
     const deleteLead = useMutation(api.leads.deleteLead);
+    const bulkDeleteLeads = useMutation(api.leads.bulkDeleteLeads);
+    const bulkUpdateStatus = useMutation(api.leads.bulkUpdateLeadStatus);
+    const bulkMoveToFolder = useMutation(api.leads.bulkMoveToFolder);
     const router = useRouter();
+
+    const customFieldKeys = useCustomFieldKeys(leads);
+    const { visible, toggle: toggleCol, allColumns } = useColumnVisibility(customFieldKeys);
 
     const filtered = leads.filter((lead) => {
         const matchesSearch =
@@ -89,7 +108,7 @@ export function LeadTable({ leads, categories }: LeadTableProps) {
     const clearSelection = () => setSelectedIds(new Set());
 
     // ── Actions ────────────────────────────────────────────────────
-    const handleDelete = async (leadId: Id<"leads">) => {
+    const handleSingleDelete = async (leadId: Id<"leads">) => {
         if (!confirm("Delete this lead?")) return;
         try {
             await deleteLead({ leadId });
@@ -100,10 +119,64 @@ export function LeadTable({ leads, categories }: LeadTableProps) {
         }
     };
 
-    // Navigate to full-page Compose with selected lead IDs
+    const handleBulkDelete = async () => {
+        setBulkDeleting(true);
+        try {
+            const ids = Array.from(selectedIds);
+            // Batch in chunks of 100 (Convex transaction limit)
+            for (let i = 0; i < ids.length; i += 100) {
+                const chunk = ids.slice(i, i + 100);
+                await bulkDeleteLeads({ leadIds: chunk });
+            }
+            toast.success(`Deleted ${ids.length} lead${ids.length !== 1 ? "s" : ""}`);
+            setSelectedIds(new Set());
+        } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Failed to delete leads");
+        } finally {
+            setBulkDeleting(false);
+            setDeleteConfirmOpen(false);
+        }
+    };
+
+    const handleBulkStatusChange = async (status: string) => {
+        const ids = Array.from(selectedIds);
+        try {
+            for (let i = 0; i < ids.length; i += 100) {
+                const chunk = ids.slice(i, i + 100);
+                await bulkUpdateStatus({ leadIds: chunk, status });
+            }
+            toast.success(`Updated ${ids.length} lead${ids.length !== 1 ? "s" : ""} to "${status}"`);
+            setSelectedIds(new Set());
+        } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Failed to update status");
+        }
+    };
+
+    const handleBulkMoveToFolder = async (folderId: Id<"leadFolders"> | undefined) => {
+        const ids = Array.from(selectedIds);
+        try {
+            for (let i = 0; i < ids.length; i += 100) {
+                const chunk = ids.slice(i, i + 100);
+                await bulkMoveToFolder({ leadIds: chunk, folderId });
+            }
+            const label = folderId
+                ? folders.find((f) => f._id === folderId)?.name ?? "folder"
+                : "unfiled";
+            toast.success(`Moved ${ids.length} lead${ids.length !== 1 ? "s" : ""} to ${label}`);
+            setSelectedIds(new Set());
+        } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Failed to move leads");
+        }
+    };
+
     const goToCompose = (ids: Id<"leads">[]) => {
         const query = ids.join(",");
         router.push(`/cms/outreach/compose?leads=${encodeURIComponent(query)}`);
+    };
+
+    const openEdit = (lead: Lead) => {
+        setEditLead(lead);
+        setEditOpen(true);
     };
 
     if (leads.length === 0) {
@@ -160,6 +233,7 @@ export function LeadTable({ leads, categories }: LeadTableProps) {
                         </SelectContent>
                     </Select>
                 )}
+                <ColumnToggle allColumns={allColumns} visible={visible} onToggle={toggleCol} />
             </div>
 
             {/* Selection action bar */}
@@ -176,7 +250,66 @@ export function LeadTable({ leads, categories }: LeadTableProps) {
                             onClick={() => goToCompose(Array.from(selectedIds))}
                         >
                             <Send className="h-3.5 w-3.5" />
-                            Compose Email
+                            Compose
+                        </Button>
+                        {/* Bulk status change */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="secondary" className="gap-1.5 h-8">
+                                    Status
+                                    <ChevronDown className="h-3 w-3" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                {STATUS_OPTIONS.map((s) => (
+                                    <DropdownMenuItem
+                                        key={s}
+                                        onClick={() => handleBulkStatusChange(s)}
+                                        className="capitalize"
+                                    >
+                                        Mark as {s}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        {/* Bulk move to folder */}
+                        {folders.length > 0 && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button size="sm" variant="secondary" className="gap-1.5 h-8">
+                                        <FolderOpen className="h-3.5 w-3.5" />
+                                        Move to
+                                        <ChevronDown className="h-3 w-3" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {folders.map((f) => (
+                                        <DropdownMenuItem
+                                            key={f._id}
+                                            onClick={() => handleBulkMoveToFolder(f._id as Id<"leadFolders">)}
+                                        >
+                                            <FolderOpen className="h-4 w-4 mr-2" />
+                                            {f.name} ({f.leadCount})
+                                        </DropdownMenuItem>
+                                    ))}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        onClick={() => handleBulkMoveToFolder(undefined)}
+                                    >
+                                        Remove from folder
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                        {/* Bulk delete */}
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="gap-1.5 h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setDeleteConfirmOpen(true)}
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
                         </Button>
                         <Button
                             size="sm"
@@ -207,19 +340,25 @@ export function LeadTable({ leads, categories }: LeadTableProps) {
                                     aria-label="Select all visible leads"
                                 />
                             </TableHead>
-                            <TableHead>Contact</TableHead>
-                            <TableHead>Company</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Added</TableHead>
+                            {visible.has("contact") && <TableHead>Contact</TableHead>}
+                            {visible.has("company") && <TableHead>Company</TableHead>}
+                            {visible.has("category") && <TableHead>Category</TableHead>}
+                            {visible.has("email") && <TableHead>Email</TableHead>}
+                            {visible.has("phone") && <TableHead>Phone</TableHead>}
+                            {visible.has("website") && <TableHead>Website</TableHead>}
+                            {visible.has("location") && <TableHead>Location</TableHead>}
+                            {visible.has("status") && <TableHead>Status</TableHead>}
+                            {visible.has("added") && <TableHead>Added</TableHead>}
+                            {customFieldKeys.map((k) => visible.has(`cf:${k}`) && (
+                                <TableHead key={k}>{k}</TableHead>
+                            ))}
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {filtered.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                <TableCell colSpan={99} className="text-center py-8 text-muted-foreground">
                                     No leads match your search
                                 </TableCell>
                             </TableRow>
@@ -236,36 +375,62 @@ export function LeadTable({ leads, categories }: LeadTableProps) {
                                             aria-label={`Select ${lead.email}`}
                                         />
                                     </TableCell>
-                                    <TableCell className="font-medium">
-                                        {lead.decisionMakerName || "—"}
-                                        {lead.title && (
-                                            <span className="block text-xs text-muted-foreground">
-                                                {lead.title}
-                                            </span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>{lead.companyName || "—"}</TableCell>
-                                    <TableCell>
-                                        {lead.category ? (
-                                            <Badge variant="outline" className="text-xs font-normal">
-                                                {lead.category}
+                                    {visible.has("contact") && (
+                                        <TableCell className="font-medium">
+                                            {lead.decisionMakerName || "—"}
+                                            {lead.title && (
+                                                <span className="block text-xs text-muted-foreground">
+                                                    {lead.title}
+                                                </span>
+                                            )}
+                                        </TableCell>
+                                    )}
+                                    {visible.has("company") && (
+                                        <TableCell>{lead.companyName || "—"}</TableCell>
+                                    )}
+                                    {visible.has("category") && (
+                                        <TableCell>
+                                            {lead.category ? (
+                                                <Badge variant="outline" className="text-[10px] font-normal">
+                                                    {lead.category}
+                                                </Badge>
+                                            ) : (
+                                                <span className="text-muted-foreground">—</span>
+                                            )}
+                                        </TableCell>
+                                    )}
+                                    {visible.has("email") && (
+                                        <TableCell className="text-muted-foreground">{lead.email}</TableCell>
+                                    )}
+                                    {visible.has("phone") && (
+                                        <TableCell className="text-muted-foreground">{lead.phone || "—"}</TableCell>
+                                    )}
+                                    {visible.has("website") && (
+                                        <TableCell className="text-muted-foreground">{lead.website || "—"}</TableCell>
+                                    )}
+                                    {visible.has("location") && (
+                                        <TableCell className="text-muted-foreground">{lead.location || "—"}</TableCell>
+                                    )}
+                                    {visible.has("status") && (
+                                        <TableCell>
+                                            <Badge
+                                                variant="secondary"
+                                                className={STATUS_COLORS[lead.status] ?? ""}
+                                            >
+                                                {lead.status}
                                             </Badge>
-                                        ) : (
-                                            <span className="text-muted-foreground">—</span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground">{lead.email}</TableCell>
-                                    <TableCell>
-                                        <Badge
-                                            variant="secondary"
-                                            className={STATUS_COLORS[lead.status] ?? ""}
-                                        >
-                                            {lead.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground text-sm">
-                                        {format(new Date(lead._creationTime), "MMM d, yyyy")}
-                                    </TableCell>
+                                        </TableCell>
+                                    )}
+                                    {visible.has("added") && (
+                                        <TableCell className="text-muted-foreground text-sm">
+                                            {format(new Date(lead._creationTime), "MMM d, yyyy")}
+                                        </TableCell>
+                                    )}
+                                    {customFieldKeys.map((k) => visible.has(`cf:${k}`) && (
+                                        <TableCell key={k} className="text-muted-foreground">
+                                            {lead.customFields?.[k] || "—"}
+                                        </TableCell>
+                                    ))}
                                     <TableCell className="text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -274,15 +439,18 @@ export function LeadTable({ leads, categories }: LeadTableProps) {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem
-                                                    onClick={() => goToCompose([lead._id])}
-                                                >
+                                                <DropdownMenuItem onClick={() => openEdit(lead)}>
+                                                    <Pencil className="h-4 w-4 mr-2" />
+                                                    Edit Lead
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => goToCompose([lead._id])}>
                                                     <Send className="h-4 w-4 mr-2" />
                                                     Send Email
                                                 </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
                                                 <DropdownMenuItem
                                                     className="text-destructive"
-                                                    onClick={() => handleDelete(lead._id)}
+                                                    onClick={() => handleSingleDelete(lead._id)}
                                                 >
                                                     <Trash2 className="h-4 w-4 mr-2" />
                                                     Delete
@@ -296,6 +464,36 @@ export function LeadTable({ leads, categories }: LeadTableProps) {
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Edit drawer */}
+            <EditLeadDrawer
+                lead={editLead}
+                open={editOpen}
+                onOpenChange={setEditOpen}
+            />
+
+            {/* Bulk delete confirmation dialog */}
+            <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete {selectedIds.size} leads?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. All selected leads and their data
+                            will be permanently removed.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={bulkDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleBulkDelete}
+                            disabled={bulkDeleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {bulkDeleting ? "Deleting..." : `Delete ${selectedIds.size} Leads`}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
