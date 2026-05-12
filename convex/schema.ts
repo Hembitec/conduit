@@ -92,4 +92,62 @@ export default defineSchema({
     slug: v.string(),
     userId: v.id("users"),
   }).index("by_user", ["userId"]),
+
+  // ── Outreach: Leads ──
+  leads: defineTable({
+    companyName: v.optional(v.string()),
+    location: v.optional(v.string()),
+    website: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    decisionMakerName: v.optional(v.string()),
+    title: v.optional(v.string()),
+    email: v.string(),
+    category: v.optional(v.string()),
+    status: v.string(), // "new" | "contacted" | "replied" | "bounced" | "unsubscribed"
+    userId: v.id("users"),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_status", ["userId", "status"])
+    .index("by_user_and_email", ["userId", "email"])
+    .index("by_user_and_category", ["userId", "category"]),
+
+  // ── Outreach: Email Templates ──
+  emailTemplates: defineTable({
+    name: v.string(),
+    subject: v.string(),
+    body: v.string(),
+    userId: v.id("users"),
+  }).index("by_user", ["userId"]),
+
+  // ── Outreach: Campaigns ──
+  campaigns: defineTable({
+    name: v.string(),
+    templateId: v.id("emailTemplates"),
+    senderName: v.string(),
+    senderEmail: v.string(),
+    targetLeadStatus: v.string(),
+    status: v.string(), // "draft" | "running" | "paused" | "completed"
+    rateLimitPerHour: v.number(),
+    totalLeads: v.number(),
+    sentCount: v.number(),
+    userId: v.id("users"),
+  })
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"]),
+
+  // ── Outreach: Email Logs ──
+  emailLogs: defineTable({
+    campaignId: v.id("campaigns"),
+    leadId: v.id("leads"),
+    brevoMessageId: v.optional(v.string()),
+    status: v.string(), // "queued" | "sent" | "delivered" | "opened" | "clicked" | "bounced"
+    sentAt: v.optional(v.float64()),
+    openedAt: v.optional(v.float64()),
+    clickedAt: v.optional(v.float64()),
+    errorMessage: v.optional(v.string()),
+    userId: v.id("users"),
+  })
+    .index("by_user", ["userId"])
+    .index("by_campaign", ["campaignId"])
+    .index("by_brevoMessageId", ["brevoMessageId"]),
 });

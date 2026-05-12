@@ -577,3 +577,17 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
   - `PHASE-TRACKER.md` — 7 tasks checked off, statuses updated
   - `AGENTS.md` — session notes added
 - **Next step**: Start Phase 6 (SEO) — create `/blog/[slug]` route with `generateMetadata()`, sitemap, robots.txt, RSS feed.
+
+### 2026-05-10 — Blog Public Listing Page Creation
+- **What was done**: Created the public blog listing page (`/blog`) and connected it to the landing page navbar.
+- **Key decisions**:
+  - Enriched the `getPublishedArticles` query in `convex/blogs.ts` to return author and category data so the UI can display them correctly on the blog listing page.
+  - Used the existing `NavBar` and `Footer` components to keep the layout consistent with the landing page design.
+  - Set up a clean, responsive grid layout for the latest articles featuring cover images, categories, reading times, and author avatars.
+- **Issues encountered & fixed**:
+  - `getPublishedArticles` was previously returning raw database records without author/category data; modified it using `Promise.all` to fetch relationships.
+  - Found a named import for `Footer` (`{ Footer }`) but the component used a `export default Footer`; fixed it to a default import.
+- **Files changed**:
+  - `convex/blogs.ts` (updated `getPublishedArticles` query)
+  - `app/blog/page.tsx` (new file created)
+- **Next step**: Finalize remaining Blog Features (search, tag filtering) from Phase 8.

@@ -312,11 +312,23 @@ export const readPublicArticle = query({
 export const getPublishedArticles = query({
     args: {},
     handler: async (ctx) => {
-        return await ctx.db
+        const blogs = await ctx.db
             .query("blogs")
             .withIndex("by_published", (q) => q.eq("published", true))
             .order("desc")
             .collect();
+            
+        return await Promise.all(
+            blogs.map(async (blog) => {
+                const author = blog.authorId ? await ctx.db.get(blog.authorId) : null;
+                const category = blog.categoryId ? await ctx.db.get(blog.categoryId) : null;
+                return {
+                    ...blog,
+                    author: author ? { name: author.name, profileImg: author.profileImg } : null,
+                    category: category ? { name: category.name } : null,
+                };
+            })
+        );
     },
 });
 

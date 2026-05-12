@@ -117,5 +117,20 @@
 
 @layer base {
   * { @apply border-border; }
+  html { scroll-behavior: smooth; }
   body { @apply bg-background text-foreground; }
+
+  /* Thin auto-hiding scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  *:hover,
+  *:focus-within {
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
+  *:hover::-webkit-scrollbar-thumb { background: hsl(var(--border)); }
 }

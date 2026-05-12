@@ -14,6 +14,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Loader2, PenLine, ArrowRight } from "lucide-react";
 
+import { Logo } from "@/components/Logo";
+
 export default function SignInPage() {
   const { signIn } = useAuthActions();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
@@ -36,8 +38,11 @@ export default function SignInPage() {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "An unknown error occurred.";
+      
       if (message.includes("InvalidAccountId") || message.includes("InvalidSecret")) {
         toast.error("Invalid email or password. Please try again.");
+      } else if (message.includes("fetch failed") || message.includes("NetworkError") || message.includes("Failed to fetch")) {
+        toast.error("Please check your internet connection and try again.");
       } else {
         toast.error(message);
       }
@@ -75,9 +80,7 @@ export default function SignInPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="flex items-center justify-center gap-2 mb-8"
         >
-          <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-            <PenLine className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <Logo className="h-10 w-10" />
           <span className="text-xl font-bold tracking-tight">Conduit CMS</span>
         </motion.div>
 

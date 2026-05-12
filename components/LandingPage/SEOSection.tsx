@@ -3,7 +3,7 @@ import { Search, Map, Rss, Share2 } from "lucide-react"
 
 export default function SEOSection() {
   return (
-    <section className="w-full px-4 py-24 max-w-6xl mx-auto">
+    <section id="seo" className="w-full px-4 py-24 max-w-6xl mx-auto scroll-mt-24">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div className="order-2 lg:order-1 grid grid-cols-2 gap-4">
            <SEOCard icon={<Search />} label="Google Tags" />

@@ -4,7 +4,7 @@ import { Save, Image as ImageIcon, FileText } from "lucide-react"
 
 export default function EditorSection() {
   return (
-    <section className="w-full px-4 py-24 max-w-6xl mx-auto">
+    <section id="editor" className="w-full px-4 py-24 max-w-6xl mx-auto scroll-mt-24">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div>
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">

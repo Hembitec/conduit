@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL || "https://pleasant-stoat-303.convex.cloud";
+const CONVEX_CLOUD_URL = process.env.NEXT_PUBLIC_CONVEX_URL || "https://pleasant-stoat-303.convex.cloud";
+const CONVEX_SITE_URL = CONVEX_CLOUD_URL.replace(".cloud", ".site");
 
 export async function GET(request: NextRequest) {
   const path = request.nextUrl.pathname.replace("/api/auth", "");
-  const url = new URL(`${CONVEX_URL}/api/auth${path}`);
+  const url = new URL(`${CONVEX_SITE_URL}/api/auth${path}`);
   url.search = request.nextUrl.search;
   
   const response = await fetch(url.toString(), {
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const path = request.nextUrl.pathname.replace("/api/auth", "");
-  const url = new URL(`${CONVEX_URL}/api/auth${path}`);
+  const url = new URL(`${CONVEX_SITE_URL}/api/auth${path}`);
   url.search = request.nextUrl.search;
   
   const body = await request.text();

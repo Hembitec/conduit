@@ -3,7 +3,7 @@ import { BarChart3, TrendingUp, Users } from "lucide-react"
 
 export default function AnalyticsSection() {
   return (
-    <section className="w-full px-4 py-24 bg-muted/30">
+    <section id="analytics" className="w-full px-4 py-24 bg-muted/30 scroll-mt-24">
       <div className="max-w-6xl mx-auto text-center mb-16">
         <h2 className="text-4xl font-bold tracking-tight mb-4">The Insight Engine.</h2>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">

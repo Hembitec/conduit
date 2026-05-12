@@ -13,7 +13,8 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2, PenLine, ArrowRight, CheckCircle } from "lucide-react";
+import { Loader2, ArrowRight, CheckCircle } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 function calculatePasswordStrength(password: string): number {
   let strength = 0;
@@ -68,7 +69,10 @@ export default function SignUpPage() {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "An unknown error occurred.";
-      if (message.includes("AccountAlreadyExists")) {
+      
+      if (message.includes("fetch failed") || message.includes("NetworkError") || message.includes("Failed to fetch")) {
+        toast.error("Please check your internet connection and try again.");
+      } else if (message.includes("AccountAlreadyExists")) {
         toast.error("An account with this email already exists. Try signing in.");
       } else {
         toast.error(message);
@@ -81,19 +85,19 @@ export default function SignUpPage() {
   if (authLoading) return null;
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden py-8">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-muted/20 to-background" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
 
       {/* Animated background elements */}
       <motion.div
-        className="absolute top-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl"
+        className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
         animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl"
+        className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-accent/10 rounded-full blur-3xl"
         animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       />
@@ -107,9 +111,7 @@ export default function SignUpPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="flex items-center justify-center gap-2 mb-8"
         >
-          <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-            <PenLine className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <Logo className="h-10 w-10" />
           <span className="text-xl font-bold tracking-tight">Conduit CMS</span>
         </motion.div>
 

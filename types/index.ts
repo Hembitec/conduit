@@ -93,6 +93,24 @@ export interface PublicArticle {
   _creationTime: number;
 }
 
+/** Shape returned by getPublishedArticles — enriched with author/category */
+export interface ListedArticle {
+  _id: Id<"blogs">;
+  title: string;
+  subtitle?: string;
+  slug: string;
+  image?: string;
+  imageAlt?: string;
+  published: boolean;
+  shareable: boolean;
+  viewCount: number;
+  readingTime?: number;
+  userId: Id<"users">;
+  _creationTime: number;
+  author: { name: string; profileImg?: string } | null;
+  category: { name: string } | null;
+}
+
 export interface PublicAuthor {
   name: string;
   profileImg?: string;
@@ -174,4 +192,61 @@ export interface ArticleCardProps {
 export interface DocumentCardProps {
   document: Document;
   onDelete?: (id: Id<"documents">) => void;
+}
+
+// ============================================================================
+// Outreach Types
+// ============================================================================
+
+export interface Lead {
+  _id: Id<"leads">;
+  companyName?: string;
+  location?: string;
+  website?: string;
+  phone?: string;
+  decisionMakerName?: string;
+  title?: string;
+  email: string;
+  category?: string;
+  status: string;
+  userId: Id<"users">;
+  _creationTime: number;
+}
+
+export interface EmailTemplate {
+  _id: Id<"emailTemplates">;
+  name: string;
+  subject: string;
+  body: string;
+  userId: Id<"users">;
+  _creationTime: number;
+}
+
+export interface Campaign {
+  _id: Id<"campaigns">;
+  name: string;
+  templateId: Id<"emailTemplates">;
+  senderName: string;
+  senderEmail: string;
+  targetLeadStatus: string;
+  status: string;
+  rateLimitPerHour: number;
+  totalLeads: number;
+  sentCount: number;
+  userId: Id<"users">;
+  _creationTime: number;
+}
+
+export interface EmailLog {
+  _id: Id<"emailLogs">;
+  campaignId: Id<"campaigns">;
+  leadId: Id<"leads">;
+  brevoMessageId?: string;
+  status: string;
+  sentAt?: number;
+  openedAt?: number;
+  clickedAt?: number;
+  errorMessage?: string;
+  userId: Id<"users">;
+  _creationTime: number;
 }

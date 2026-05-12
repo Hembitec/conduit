@@ -89,25 +89,31 @@ interface StatCardProps {
 
 function StatCard({ title, value, subtitle, icon: Icon, loading }: StatCardProps) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
+    <div className="flex flex-col gap-4 rounded-lg border border-border/60 bg-card p-6 transition-colors duration-300 hover:border-primary/40 hover:bg-muted/10">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          {title}
+        </span>
+        <span className="text-muted-foreground/60">
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <div className="flex flex-col gap-1">
         {loading ? (
           <>
-            <Skeleton className="h-8 w-20 mb-1" />
+            <Skeleton className="h-9 w-20 mb-1" />
             <Skeleton className="h-3 w-28" />
           </>
         ) : (
           <>
-            <div className="text-2xl font-bold">{value}</div>
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
+            <p className="font-serif text-4xl font-semibold tracking-tight tabular-nums text-foreground">
+              {value}
+            </p>
+            <p className="text-xs text-muted-foreground font-medium">{subtitle}</p>
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -133,15 +139,16 @@ function TopArticlesTable({
     .slice(0, 5)
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Trophy className="h-4 w-4" />
-          Top Articles
-        </CardTitle>
-        <CardDescription>Your most viewed published articles</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="flex flex-col gap-4 rounded-lg border border-border/60 bg-card p-6 h-full">
+      <div className="flex items-center justify-between mb-2 pb-4 border-b border-border/40">
+        <div className="flex items-center gap-2">
+          <Trophy className="h-4 w-4 text-primary" />
+          <h2 className="font-serif text-xl font-medium tracking-tight text-foreground">
+            Top Articles
+          </h2>
+        </div>
+      </div>
+      <div className="flex flex-col gap-5 pt-2">
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -158,30 +165,32 @@ function TopArticlesTable({
         ) : (
           <div className="space-y-1">
             {top5.map((article, idx) => (
-              <div key={article.slug}>
-                <div className="flex items-center justify-between py-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-xs font-bold text-muted-foreground w-5 shrink-0">
-                      #{idx + 1}
-                    </span>
-                    <span className="text-sm font-medium truncate">
-                      {article.title}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0 ml-4">
-                    <Eye className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-sm font-semibold tabular-nums">
-                      {article.viewCount.toLocaleString()}
-                    </span>
-                  </div>
+              <div
+                key={article.slug}
+                className="group flex items-center justify-between gap-4 hover:bg-muted/10 p-2 -mx-2 rounded-md transition-colors"
+              >
+                <div className="flex items-center gap-4 min-w-0">
+                  <span className="font-serif text-2xl text-muted-foreground/30 tabular-nums w-6 shrink-0 leading-none mt-0.5">
+                    {idx + 1}
+                  </span>
+                  <span className="text-sm font-medium truncate group-hover:text-primary transition-colors text-foreground">
+                    {article.title}
+                  </span>
                 </div>
-                {idx < top5.length - 1 && <Separator />}
+                <div className="flex flex-col items-end gap-1 shrink-0 ml-4">
+                  <span className="font-serif text-lg tabular-nums text-foreground leading-none">
+                    {article.viewCount.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Views
+                  </span>
+                </div>
               </div>
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -222,19 +231,17 @@ export default function AnalyticsPage() {
     RANGE_OPTIONS.find((o) => o.value === range)?.label ?? "Last 30 days"
 
   return (
-    <main className="flex flex-col gap-6 p-4">
+    <main className="flex flex-col gap-8 p-4 sm:p-0">
       {/* Header with date filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-6 w-6" />
-            <h1 className="scroll-m-20 text-3xl font-bold tracking-tight">
-              Analytics
-            </h1>
-          </div>
-          <p className="text-muted-foreground mt-1">
-            Track your blog performance and audience engagement.
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-6">
+        <div className="flex flex-col gap-1.5">
+          <p className="text-muted-foreground text-sm uppercase tracking-widest font-medium flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Blog Analytics
           </p>
+          <h1 className="font-serif text-3xl sm:text-4xl tracking-tight text-foreground">
+            Performance
+          </h1>
         </div>
         <Select
           value={range}
@@ -286,25 +293,37 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Bar Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Views Over Time</CardTitle>
-          <CardDescription>
-            Daily page views — {rangeLabel.toLowerCase()} ({rangeViewCount.toLocaleString()} total)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-end gap-1 h-[200px]">
-              {Array.from({ length: chartDays }).map((_, i) => (
-                <Skeleton
-                  key={i}
-                  className="flex-1 rounded-sm"
-                  style={{ height: `${Math.random() * 60 + 20}%` }}
-                />
-              ))}
-            </div>
-          ) : rangeViewCount === 0 ? (
+      <div className="flex flex-col gap-4 rounded-lg border border-border/60 bg-card p-6">
+        <div className="flex items-center justify-between mb-2 pb-4 border-b border-border/40">
+          <div className="flex flex-col gap-1">
+            <h2 className="font-serif text-xl font-medium tracking-tight text-foreground">
+              Views Over Time
+            </h2>
+            <p className="text-xs text-muted-foreground font-medium">
+              Daily page views — {rangeLabel.toLowerCase()} ({rangeViewCount.toLocaleString()} total)
+            </p>
+          </div>
+        </div>
+        <div className="pt-2">
+          {loading ? (() => {
+            const SKELETON_HEIGHTS = [
+              45, 70, 30, 80, 55, 65, 40, 75, 50, 35,
+              60, 80, 25, 70, 55, 45, 65, 75, 35, 50,
+              70, 40, 80, 60, 30, 75, 55, 65, 45, 70,
+            ];
+            const heights = SKELETON_HEIGHTS.slice(0, chartDays);
+            return (
+              <div className="flex items-end gap-1 h-[200px]">
+                {heights.map((h, i) => (
+                  <Skeleton
+                    key={i}
+                    className="flex-1 rounded-sm"
+                    style={{ height: `${h}%` }}
+                  />
+                ))}
+              </div>
+            );
+          })() : rangeViewCount === 0 ? (
             <div className="h-[200px] flex flex-col items-center justify-center gap-2 text-center">
               <BarChart3 className="h-16 w-16 text-muted-foreground/40" />
               <p className="text-lg font-medium text-muted-foreground">
@@ -344,13 +363,13 @@ export default function AnalyticsPage() {
             </div>
           )}
           {!loading && rangeViewCount > 0 && (
-            <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
+            <div className="flex justify-between mt-1 text-[10px] text-muted-foreground uppercase tracking-widest font-medium">
               <span>{dayBuckets[0]?.[0]}</span>
               <span>{dayBuckets[dayBuckets.length - 1]?.[0]}</span>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Top 5 Articles */}
       <TopArticlesTable
