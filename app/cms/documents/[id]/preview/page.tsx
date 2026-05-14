@@ -3,7 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { Id } from "@/convex/_generated/dataModel";
 import { notFound } from "next/navigation";
-import ReactHtmlParser from 'react-html-parser';
+import parse from 'html-react-parser';
 import { transformNode } from '@/lib/transform-node';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -63,8 +63,8 @@ export default async function DocumentPreview({ params }: { params: Promise<{ id
         
         <div className="prose prose-neutral dark:prose-invert max-w-none prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-base prose-p:leading-relaxed">
           {document.document ? (
-            ReactHtmlParser(document.document, {
-              transform: transformNode
+            parse(document.document, {
+              replace: transformNode
             })
           ) : (
             <p className="text-muted-foreground italic">Empty document</p>

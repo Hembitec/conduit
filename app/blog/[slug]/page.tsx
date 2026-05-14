@@ -5,7 +5,7 @@ import { transformNode } from '@/lib/transform-node';
 import Image from 'next/image';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import ReactHtmlParser from 'react-html-parser';
+import parse from 'html-react-parser';
 import { TrackPageView } from '@/components/TrackPageView';
 import { ArticleComments } from '@/components/ArticleComments';
 import { SocialShareButtons } from '@/components/SocialShareButtons';
@@ -174,8 +174,8 @@ export default async function BlogArticle({ params }: { params: Promise<{ slug: 
 
         {/* Content */}
         <div className="prose prose-neutral dark:prose-invert max-w-none prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-base prose-p:leading-relaxed">
-          {ReactHtmlParser(data?.blogHtml, {
-            transform: transformNode
+          {parse(data?.blogHtml, {
+            replace: transformNode
           })}
         </div>
 

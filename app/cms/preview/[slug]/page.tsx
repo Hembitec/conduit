@@ -3,7 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { ChevronLeft, Calendar, Clock, Eye } from 'lucide-react'
 import Image from "next/image"
 import Link from 'next/link'
-import ReactHtmlParser from 'react-html-parser'
+import parse from 'html-react-parser'
 import ManageArticle from '../(components)/ManageArticle'
 import { transformNode } from '@/lib/transform-node'
 import { Badge } from "@/components/ui/badge"
@@ -97,8 +97,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
         {/* Article Content */}
         <div className="prose prose-neutral dark:prose-invert max-w-none">
-          {ReactHtmlParser(response?.blogHtml || '', {
-            transform: transformNode
+          {parse(response?.blogHtml || '', {
+            replace: transformNode
           })}
         </div>
 
