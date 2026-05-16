@@ -371,3 +371,41 @@ export const getCustomFieldKeys = query({
         return Array.from(keys).sort();
     },
 });
+
+// ─── Matching Lead Preview (for Campaign creation) ───────────────
+
+export const getMatchingLeadPreview = query({
+    args: {
+        status: v.string(),
+        category: v.optional(v.string()),
+        folderId: v.optional(v.id("leadFolders")),
+    },
+    handler: async (ctx, args) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) return { count: 0, samples: [] };
+
+        let leads = await ctx.db
+            .query("leads")
+            .withIndex("by_user_and_status", (q) =>
+                q.eq("userId", userId).eq("status", args.status)
+            )
+            .collect();
+
+        if (args.category) {
+            leads = leads.filter((l) => l.category === args.category);
+        }
+        if (args.folderId) {
+            leads = leads.filter((l) => l.folderId === args.folderId);
+        }
+
+        return {
+            count: leads.length,
+            samples: leads.slice(0, 5).map((l) => ({
+                _id: l._id,
+                email: l.email,
+                name: l.decisionMakerName ?? null,
+                company: l.companyName ?? null,
+            })),
+        };
+    },
+});

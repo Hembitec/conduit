@@ -16,19 +16,57 @@ export const processActiveCampaigns = internalMutation({
             .collect();
 
         for (const campaign of campaigns) {
-            // Calculate batch size: rateLimitPerHour / 12 (runs every 5 min)
-            const batchSize = Math.max(1, Math.floor(campaign.rateLimitPerHour / 12));
+            // Guard 1: If we've already sent to all intended leads, complete the campaign
+            const remaining = campaign.totalLeads - campaign.sentCount;
+            if (remaining <= 0) {
+                await ctx.db.patch(campaign._id, { status: "completed" });
+                continue;
+            }
+
+            // Guard 2: Cap batch size to the LESSER of rate-limit batch and remaining leads
+            const rateBatch = Math.max(1, Math.floor(campaign.rateLimitPerHour / 12));
+            const batchSize = Math.min(rateBatch, remaining);
 
             // Find leads matching the target status for this campaign's user
-            const leads = await ctx.db
+            // We fetch extra to allow for dedup + category/folder filtering below
+            let candidateLeads = await ctx.db
                 .query("leads")
                 .withIndex("by_user_and_status", (q) =>
                     q.eq("userId", campaign.userId).eq("status", campaign.targetLeadStatus)
                 )
-                .take(batchSize);
+                .take(batchSize * 5);
+
+            // Filter by category and folder if specified on the campaign
+            if (campaign.targetCategory) {
+                candidateLeads = candidateLeads.filter(
+                    (l) => l.category === campaign.targetCategory
+                );
+            }
+            if (campaign.targetFolderId) {
+                candidateLeads = candidateLeads.filter(
+                    (l) => l.folderId === campaign.targetFolderId
+                );
+            }
+
+            if (candidateLeads.length === 0) {
+                // No more leads to send — mark campaign as completed
+                await ctx.db.patch(campaign._id, { status: "completed" });
+                continue;
+            }
+
+            // Guard 3: Dedup — skip leads already emailed in THIS campaign
+            const existingLogs = await ctx.db
+                .query("emailLogs")
+                .withIndex("by_campaign", (q) => q.eq("campaignId", campaign._id))
+                .collect();
+            const alreadySentLeadIds = new Set(existingLogs.map((log) => log.leadId));
+
+            const leads = candidateLeads
+                .filter((lead) => !alreadySentLeadIds.has(lead._id))
+                .slice(0, batchSize);
 
             if (leads.length === 0) {
-                // No more leads to send — mark campaign as completed
+                // All matching leads already emailed — complete the campaign
                 await ctx.db.patch(campaign._id, { status: "completed" });
                 continue;
             }
@@ -179,3 +217,21 @@ export const getOutreachStats = internalQuery({
         };
     },
 });
+
+// ─── Dedup Check (used by sendEmailToLead action) ────────────────
+
+export const hasAlreadySentToLead = internalQuery({
+    args: {
+        campaignId: v.id("campaigns"),
+        leadId: v.id("leads"),
+    },
+    handler: async (ctx, args) => {
+        const existingLog = await ctx.db
+            .query("emailLogs")
+            .withIndex("by_campaign", (q) => q.eq("campaignId", args.campaignId))
+            .filter((q) => q.eq(q.field("leadId"), args.leadId))
+            .first();
+        return existingLog !== null;
+    },
+});
+

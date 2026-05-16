@@ -1,4 +1,4 @@
-import { mutation, query, internalQuery } from "./_generated/server";
+import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
@@ -72,7 +72,10 @@ export const createCampaign = mutation({
         templateId: v.id("emailTemplates"),
         senderName: v.string(),
         senderEmail: v.string(),
+        replyToEmail: v.optional(v.string()),
         targetLeadStatus: v.string(),
+        targetCategory: v.optional(v.string()),
+        targetFolderId: v.optional(v.id("leadFolders")),
         rateLimitPerHour: v.number(),
     },
     handler: async (ctx, args) => {
@@ -85,23 +88,48 @@ export const createCampaign = mutation({
             throw new ConvexError("Template not found");
         }
 
-        // Count matching leads for the target status
-        const matchingLeads = await ctx.db
-            .query("leads")
-            .withIndex("by_user_and_status", (q) =>
-                q.eq("userId", userId).eq("status", args.targetLeadStatus)
-            )
-            .collect();
+        // Count matching leads using the most specific index available
+        let candidateLeads;
+        if (args.targetFolderId) {
+            candidateLeads = await ctx.db
+                .query("leads")
+                .withIndex("by_user_and_folder", (q) =>
+                    q.eq("userId", userId).eq("folderId", args.targetFolderId)
+                )
+                .collect();
+            // In-memory filter by status + category
+            candidateLeads = candidateLeads.filter(
+                (l) =>
+                    l.status === args.targetLeadStatus &&
+                    (!args.targetCategory || l.category === args.targetCategory)
+            );
+        } else {
+            candidateLeads = await ctx.db
+                .query("leads")
+                .withIndex("by_user_and_status", (q) =>
+                    q.eq("userId", userId).eq("status", args.targetLeadStatus)
+                )
+                .collect();
+            // In-memory filter by category if set
+            if (args.targetCategory) {
+                candidateLeads = candidateLeads.filter(
+                    (l) => l.category === args.targetCategory
+                );
+            }
+        }
 
         return await ctx.db.insert("campaigns", {
             name: args.name,
             templateId: args.templateId,
             senderName: args.senderName,
             senderEmail: args.senderEmail,
+            replyToEmail: args.replyToEmail,
             targetLeadStatus: args.targetLeadStatus,
+            targetCategory: args.targetCategory,
+            targetFolderId: args.targetFolderId,
             status: "draft",
             rateLimitPerHour: args.rateLimitPerHour,
-            totalLeads: matchingLeads.length,
+            totalLeads: candidateLeads.length,
             sentCount: 0,
             userId,
         });
@@ -174,6 +202,7 @@ export const sendToSelectedLeads = mutation({
         templateId: v.id("emailTemplates"),
         senderName: v.string(),
         senderEmail: v.string(),
+        replyToEmail: v.optional(v.string()),
         leadIds: v.array(v.id("leads")),
     },
     handler: async (ctx, args) => {
@@ -207,6 +236,7 @@ export const sendToSelectedLeads = mutation({
             templateId: args.templateId,
             senderName: args.senderName,
             senderEmail: args.senderEmail,
+            replyToEmail: args.replyToEmail,
             targetLeadStatus: "selected",
             status: "running",
             rateLimitPerHour: 300,
@@ -228,6 +258,31 @@ export const sendToSelectedLeads = mutation({
             );
         }
 
+        // Schedule a completion check after all sends should have finished
+        // (total stagger time + 30s buffer for Brevo API latency)
+        const totalStaggerMs = (args.leadIds.length - 1) * 3000;
+        await ctx.scheduler.runAfter(
+            totalStaggerMs + 30000,
+            internal.campaigns.autoCompleteCampaign,
+            { campaignId }
+        );
+
         return { campaignId, count: args.leadIds.length };
+    },
+});
+
+// ─── Auto-Complete (Internal) ────────────────────────────────────
+// Scheduled by sendToSelectedLeads to mark compose campaigns as
+// "completed" after all sends have fired.
+
+export const autoCompleteCampaign = internalMutation({
+    args: { campaignId: v.id("campaigns") },
+    handler: async (ctx, args) => {
+        const campaign = await ctx.db.get(args.campaignId);
+        if (!campaign) return;
+        // Only auto-complete if still running (user may have already paused/deleted)
+        if (campaign.status === "running") {
+            await ctx.db.patch(args.campaignId, { status: "completed" });
+        }
     },
 });

@@ -15,6 +15,7 @@ import {
     LayoutTemplate,
     User,
     Mail,
+    Reply,
     Tag,
     FolderOpen,
 } from "lucide-react";
@@ -65,6 +66,7 @@ export default function ComposePage({ searchParams }: ComposePageProps) {
     const [templateId, setTemplateId] = useState<string>("");
     const [senderName, setSenderName] = useState("Remna Design");
     const [senderEmail, setSenderEmail] = useState("contact@mail.remnadesign.pro");
+    const [replyToEmail, setReplyToEmail] = useState("");
     const [sending, setSending] = useState(false);
     const [showLeadPicker, setShowLeadPicker] = useState(false);
     const [leadSearch, setLeadSearch] = useState("");
@@ -133,6 +135,7 @@ export default function ComposePage({ searchParams }: ComposePageProps) {
                 templateId: templateId as Id<"emailTemplates">,
                 senderName: senderName.trim(),
                 senderEmail: senderEmail.trim(),
+                replyToEmail: replyToEmail.trim() || undefined,
                 leadIds: Array.from(selectedIds) as Id<"leads">[],
             });
             toast.success(
@@ -438,31 +441,30 @@ export default function ComposePage({ searchParams }: ComposePageProps) {
                                 </p>
                             </div>
                         </div>
-                        <div>
+                        <div className="flex flex-col gap-3">
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="compose-name" className="text-xs">
-                                        Display Name
+                                    <Label htmlFor="compose-name" className="text-xs flex items-center gap-1">
+                                        <User className="h-3 w-3" /> Display Name
                                     </Label>
-                                    <Input
-                                        id="compose-name"
-                                        value={senderName}
-                                        onChange={(e) => setSenderName(e.target.value)}
-                                        placeholder="Your Name"
-                                    />
+                                    <Input id="compose-name" value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="Your Name" />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="compose-email" className="text-xs">
-                                        From Email
+                                    <Label htmlFor="compose-email" className="text-xs flex items-center gap-1">
+                                        <Mail className="h-3 w-3" /> From Email
                                     </Label>
-                                    <Input
-                                        id="compose-email"
-                                        type="email"
-                                        value={senderEmail}
-                                        onChange={(e) => setSenderEmail(e.target.value)}
-                                        placeholder="you@domain.com"
-                                    />
+                                    <Input id="compose-email" type="email" value={senderEmail} onChange={(e) => setSenderEmail(e.target.value)} placeholder="you@domain.com" />
                                 </div>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="compose-reply-to" className="text-xs flex items-center gap-1">
+                                    <Reply className="h-3 w-3" /> Reply-To
+                                    <Badge variant="secondary" className="text-[9px] ml-1">Optional</Badge>
+                                </Label>
+                                <Input id="compose-reply-to" type="email" value={replyToEmail} onChange={(e) => setReplyToEmail(e.target.value)} placeholder="replies@yourdomain.com" />
+                                <p className="text-[11px] text-muted-foreground">
+                                    {replyToEmail.trim() ? `Replies → ${replyToEmail.trim()}` : `Replies → ${senderEmail} (sender email)`}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -505,10 +507,10 @@ export default function ComposePage({ searchParams }: ComposePageProps) {
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-3">
-                                    {/* From line */}
-                                    <div className="text-xs text-muted-foreground">
-                                        <span className="font-medium text-foreground">From:</span>{" "}
-                                        {senderName} &lt;{senderEmail}&gt;
+                                    {/* From / Reply-To lines */}
+                                    <div className="text-xs text-muted-foreground space-y-0.5">
+                                        <div><span className="font-medium text-foreground">From:</span> {senderName} &lt;{senderEmail}&gt;</div>
+                                        {replyToEmail.trim() && <div><span className="font-medium text-foreground">Reply-To:</span> {replyToEmail.trim()}</div>}
                                     </div>
                                     <Separator />
                                     {/* Subject */}

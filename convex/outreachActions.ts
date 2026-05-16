@@ -22,6 +22,13 @@ export const sendEmailToLead = internalAction({
         if (!campaign) return;
         if (campaign.status === "paused" || campaign.status === "completed") return;
 
+        // DEDUP GUARD: Skip if this lead was already emailed in this campaign
+        const alreadySent = await ctx.runQuery(
+            internal.outreachCron.hasAlreadySentToLead,
+            { campaignId: args.campaignId, leadId: args.leadId }
+        );
+        if (alreadySent) return;
+
         const template = await ctx.runQuery(
             internal.emailTemplates.getTemplateInternal,
             { templateId: campaign.templateId }
@@ -94,6 +101,9 @@ export const sendEmailToLead = internalAction({
                             name: campaign.senderName,
                             email: campaign.senderEmail,
                         },
+                        ...(campaign.replyToEmail
+                            ? { replyTo: { email: campaign.replyToEmail } }
+                            : {}),
                         to: [
                             {
                                 email: lead.email,

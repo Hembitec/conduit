@@ -135,7 +135,10 @@ export default defineSchema({
     templateId: v.id("emailTemplates"),
     senderName: v.string(),
     senderEmail: v.string(),
+    replyToEmail: v.optional(v.string()),
     targetLeadStatus: v.string(),
+    targetCategory: v.optional(v.string()),
+    targetFolderId: v.optional(v.id("leadFolders")),
     status: v.string(), // "draft" | "running" | "paused" | "completed"
     rateLimitPerHour: v.number(),
     totalLeads: v.number(),
