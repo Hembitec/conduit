@@ -72,7 +72,18 @@ export const sendEmailToLead = internalAction({
             }
         }
 
-        // Step 3: Send via Brevo API
+        // Step 3: If plain text template, convert newlines to <br/> for HTML rendering
+        const isPlainText = template.bodyMode === "text";
+        if (isPlainText) {
+            // Escape HTML entities first so plain text is safe, then convert newlines
+            body = body
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\n/g, "<br/>");
+        }
+
+        // Step 4: Send via Brevo API
         const brevoApiKey = process.env.BREVO_API_KEY;
         if (!brevoApiKey) {
             await ctx.runMutation(internal.outreachCron.logEmailResult, {

@@ -126,6 +126,7 @@ export default defineSchema({
     name: v.string(),
     subject: v.string(),
     body: v.string(),
+    bodyMode: v.optional(v.string()), // "html" | "text" — defaults to "html" when absent
     userId: v.id("users"),
   }).index("by_user", ["userId"]),
 

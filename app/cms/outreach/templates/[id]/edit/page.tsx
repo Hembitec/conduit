@@ -24,7 +24,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
     const customFieldKeys = useQuery(api.leads.getCustomFieldKeys) ?? [];
     const router = useRouter();
 
-    const handleSave = async (data: { name: string; subject: string; body: string }) => {
+    const handleSave = async (data: { name: string; subject: string; body: string; bodyMode: "html" | "text" }) => {
         if (!data.name || !data.subject || !data.body) {
             toast.error("All fields are required");
             return;
@@ -35,6 +35,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                 name: data.name,
                 subject: data.subject,
                 body: data.body,
+                bodyMode: data.bodyMode,
             });
             toast.success("Template updated");
             router.push("/cms/outreach/templates");
@@ -81,6 +82,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                 initialName={template.name}
                 initialSubject={template.subject}
                 initialBody={template.body}
+                initialBodyMode={(template.bodyMode as "html" | "text") ?? "html"}
                 onSave={handleSave}
                 saveLabel="Update Template"
                 savingLabel="Updating..."

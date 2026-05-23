@@ -57,7 +57,8 @@ export interface TemplateEditorProps {
     initialName?: string;
     initialSubject?: string;
     initialBody?: string;
-    onSave: (data: { name: string; subject: string; body: string }) => Promise<void>;
+    initialBodyMode?: "html" | "text";
+    onSave: (data: { name: string; subject: string; body: string; bodyMode: "html" | "text" }) => Promise<void>;
     saveLabel?: string;
     savingLabel?: string;
     customFieldKeys?: string[];
@@ -71,6 +72,7 @@ export function TemplateEditor({
     initialName = "",
     initialSubject = "",
     initialBody = "",
+    initialBodyMode = "html",
     onSave,
     saveLabel = "Save Template",
     savingLabel = "Saving...",
@@ -79,7 +81,7 @@ export function TemplateEditor({
     const [name, setName] = useState(initialName);
     const [subject, setSubject] = useState(initialSubject);
     const [body, setBody] = useState(initialBody);
-    const [bodyMode, setBodyMode] = useState<"html" | "text">("html");
+    const [bodyMode, setBodyMode] = useState<"html" | "text">(initialBodyMode);
     const [previewWidth, setPreviewWidth] = useState<"desktop" | "mobile">("desktop");
     const [showPreview, setShowPreview] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -121,7 +123,7 @@ export function TemplateEditor({
     const handleSave = async () => {
         setSaving(true);
         try {
-            await onSave({ name: name.trim(), subject: subject.trim(), body: body.trim() });
+            await onSave({ name: name.trim(), subject: subject.trim(), body: body.trim(), bodyMode });
         } finally {
             setSaving(false);
         }
@@ -165,56 +167,42 @@ export function TemplateEditor({
             <div className={cn("flex-1 grid gap-4 min-h-0 mt-4", showPreview ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1")}>
                 {/* ── Left Panel: Editor ── */}
                 <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
-                    {/* Subject Line & Tools row */}
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0">
+                    {/* Subject Line */}
+                    <div className="flex flex-col gap-1.5 shrink-0">
                         <Input
                             id="tpl-subject"
                             ref={subjectRef}
                             placeholder="Subject: e.g., Quick question about {{companyName}}"
                             value={subject}
                             onChange={(e) => setSubject(e.target.value)}
-                            className="flex-1 shadow-sm font-medium"
+                            className="shadow-sm font-medium"
                         />
-
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="gap-2 shadow-sm shrink-0">
-                                    <Braces className="h-4 w-4 text-muted-foreground" />
-                                    <span className="hidden sm:inline-block">Insert</span>
-                                    <ChevronDown className="h-3 w-3 opacity-50" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[220px]">
-                                {TEMPLATE_VARIABLES.map((v) => (
-                                    <DropdownMenuItem
-                                        key={v.key}
-                                        onClick={() => insertVariable(v.key, "body")}
-                                        className="gap-2 cursor-pointer"
-                                    >
-                                        <Badge variant="secondary" className="font-mono text-[10px] uppercase bg-muted/50">{v.key}</Badge>
-                                        <span className="text-xs">{v.label}</span>
-                                    </DropdownMenuItem>
-                                ))}
-                                {customFieldKeys.length > 0 && (
-                                    <>
-                                        <div className="my-1 mx-2 border-t border-border/40" />
-                                        <p className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                                            Custom Fields
-                                        </p>
-                                        {customFieldKeys.map((key) => (
-                                            <DropdownMenuItem
-                                                key={key}
-                                                onClick={() => insertVariable(`{{${key}}}`, "body")}
-                                                className="gap-2 cursor-pointer"
-                                            >
-                                                <Badge variant="outline" className="font-mono text-[10px] bg-muted/30">{`{{${key}}}`}</Badge>
-                                                <span className="text-xs">{key}</span>
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </>
-                                )}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        {/* Compact variable tags for subject personalization */}
+                        <div className="flex flex-wrap items-center gap-1">
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider mr-0.5 select-none">
+                                Insert:
+                            </span>
+                            {TEMPLATE_VARIABLES.map((tv) => (
+                                <button
+                                    key={tv.key}
+                                    type="button"
+                                    onClick={() => insertVariable(tv.key, "subject")}
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer border border-transparent hover:border-primary/20"
+                                >
+                                    {tv.label}
+                                </button>
+                            ))}
+                            {customFieldKeys.map((key) => (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => insertVariable(`{{${key}}}`, "subject")}
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-muted/30 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer border border-dashed border-border/60 hover:border-primary/20"
+                                >
+                                    {key}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     {/* HTML / Plain Text Tabs */}
@@ -235,6 +223,46 @@ export function TemplateEditor({
                                     Plain Text
                                 </TabsTrigger>
                             </TabsList>
+                            {/* Insert variable into body */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs shadow-sm">
+                                        <Braces className="h-3.5 w-3.5 text-muted-foreground" />
+                                        <span className="hidden sm:inline-block">Insert</span>
+                                        <ChevronDown className="h-3 w-3 opacity-50" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-[220px]">
+                                    {TEMPLATE_VARIABLES.map((tv) => (
+                                        <DropdownMenuItem
+                                            key={tv.key}
+                                            onClick={() => insertVariable(tv.key, "body")}
+                                            className="gap-2 cursor-pointer"
+                                        >
+                                            <Badge variant="secondary" className="font-mono text-[10px] uppercase bg-muted/50">{tv.key}</Badge>
+                                            <span className="text-xs">{tv.label}</span>
+                                        </DropdownMenuItem>
+                                    ))}
+                                    {customFieldKeys.length > 0 && (
+                                        <>
+                                            <div className="my-1 mx-2 border-t border-border/40" />
+                                            <p className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                                                Custom Fields
+                                            </p>
+                                            {customFieldKeys.map((key) => (
+                                                <DropdownMenuItem
+                                                    key={key}
+                                                    onClick={() => insertVariable(`{{${key}}}`, "body")}
+                                                    className="gap-2 cursor-pointer"
+                                                >
+                                                    <Badge variant="outline" className="font-mono text-[10px] bg-muted/30">{`{{${key}}}`}</Badge>
+                                                    <span className="text-xs">{key}</span>
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             {/* Icon-only preview toggle */}
                             <Button
                                 type="button"

@@ -11,7 +11,7 @@ export default function NewTemplatePage() {
     const customFieldKeys = useQuery(api.leads.getCustomFieldKeys) ?? [];
     const router = useRouter();
 
-    const handleSave = async (data: { name: string; subject: string; body: string }) => {
+    const handleSave = async (data: { name: string; subject: string; body: string; bodyMode: "html" | "text" }) => {
         if (!data.name || !data.subject || !data.body) {
             toast.error("All fields are required");
             return;

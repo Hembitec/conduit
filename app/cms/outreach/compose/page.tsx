@@ -525,13 +525,19 @@ export default function ComposePage({ searchParams }: ComposePageProps) {
                                     <Separator />
                                     {/* Body */}
                                     <div className="rounded-md border bg-background overflow-hidden">
-                                        <iframe
-                                            srcDoc={renderPreview(selectedTemplate.body)}
-                                            title="Email preview"
-                                            className="w-full border-0"
-                                            style={{ minHeight: "350px" }}
-                                            sandbox="allow-same-origin"
-                                        />
+                                        {selectedTemplate.bodyMode === "text" ? (
+                                            <div className="p-4 text-sm whitespace-pre-wrap">
+                                                {renderPreview(selectedTemplate.body)}
+                                            </div>
+                                        ) : (
+                                            <iframe
+                                                srcDoc={renderPreview(selectedTemplate.body)}
+                                                title="Email preview"
+                                                className="w-full border-0"
+                                                style={{ minHeight: "350px" }}
+                                                sandbox="allow-same-origin"
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             )}

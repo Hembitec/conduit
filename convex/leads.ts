@@ -16,13 +16,13 @@ export const getLeadsByUser = query({
                     q.eq("userId", userId).eq("folderId", args.folderId)
                 )
                 .order("desc")
-                .take(500);
+                .collect();
         }
         return await ctx.db
             .query("leads")
             .withIndex("by_user", (q) => q.eq("userId", userId))
             .order("desc")
-            .take(500);
+            .collect();
     },
 });
 
@@ -327,7 +327,7 @@ export const getLeadCategories = query({
         const leads = await ctx.db
             .query("leads")
             .withIndex("by_user", (q) => q.eq("userId", userId))
-            .take(500);
+            .collect();
         const categories = new Set<string>();
         for (const lead of leads) {
             if (lead.category) categories.add(lead.category);
@@ -347,7 +347,7 @@ export const getLeadsByCategory = query({
                 q.eq("userId", userId).eq("category", args.category)
             )
             .order("desc")
-            .take(500);
+            .collect();
     },
 });
 
@@ -361,7 +361,7 @@ export const getCustomFieldKeys = query({
         const leads = await ctx.db
             .query("leads")
             .withIndex("by_user", (q) => q.eq("userId", userId))
-            .take(500);
+            .collect();
         const keys = new Set<string>();
         for (const lead of leads) {
             if (lead.customFields) {

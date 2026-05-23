@@ -43,6 +43,7 @@ export const createTemplate = mutation({
         name: v.string(),
         subject: v.string(),
         body: v.string(),
+        bodyMode: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
@@ -52,6 +53,7 @@ export const createTemplate = mutation({
             name: args.name,
             subject: args.subject,
             body: args.body,
+            bodyMode: args.bodyMode ?? "html",
             userId,
         });
     },
@@ -63,6 +65,7 @@ export const updateTemplate = mutation({
         name: v.optional(v.string()),
         subject: v.optional(v.string()),
         body: v.optional(v.string()),
+        bodyMode: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
@@ -79,6 +82,7 @@ export const updateTemplate = mutation({
         if (updates.name !== undefined) patch.name = updates.name;
         if (updates.subject !== undefined) patch.subject = updates.subject;
         if (updates.body !== undefined) patch.body = updates.body;
+        if (updates.bodyMode !== undefined) patch.bodyMode = updates.bodyMode;
 
         await ctx.db.patch(id, patch);
     },
